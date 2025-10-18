@@ -1,0 +1,659 @@
+/* Reset et base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-image: url('ImagesPourconversions/voielactee.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  font-family: Arial, sans-serif;
+  color: white;
+  overflow-x: hidden; /* Éviter le scroll horizontal */  
+  font-size: 1.2em; /* agrandit tout par défaut */
+
+}
+
+/* === MENU PRINCIPAL === */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  /* === backdrop-filter: blur(10px); === */
+
+}
+
+.hamburger {
+  display: none;
+  background: rgba(51, 51, 51, 0.9);
+  color: white;
+  border: none;
+  padding: 15px;
+  cursor: pointer;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1001;
+  border-radius: 8px;
+  font-size: 1.2em;
+}
+
+.menu ul {
+  list-style: none;
+  display: flex;
+  background: rgba(51, 51, 51, 0.9);
+  padding: 15px;
+  backdrop-filter: blur(5px);
+  margin: 0;
+}
+
+.menu li {
+  padding: 0 20px;
+}
+
+.menu a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.1em;
+  transition: all 0.3s ease;
+  padding: 10px 15px;
+  border-radius: 5px;
+  display: block;
+}
+
+.menu a:hover, .menu a.active {
+  background: rgba(12, 255, 11, 0.2);
+  color: #0cff0b;
+  transform: translateY(-2px);
+}
+
+/* Responsive : menu mobile */
+@media (max-width: 767px) {
+  .hamburger {
+    display: block;
+  }
+  .menu {
+    display: none;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    background: rgba(51, 51, 51, 0.95);
+    backdrop-filter: blur(10px);
+  }
+  .menu.active {
+    display: block;
+  }
+  .menu ul {
+    flex-direction: column;
+  }
+  .menu li {
+    padding: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+}
+
+/* === SYSTÈME DE PAGES === */
+.page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  padding-top: 80px; /* Espace pour le menu */
+  transform: translateY(100%); /* Pages cachées en bas par défaut */
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 50;
+  overflow-y: auto;
+}
+
+.page.active {
+  transform: translateY(0); /* Page active en position normale */
+}
+
+/* === PAGE ACCUEIL === */
+.page-accueil {
+  background: linear-gradient(135deg, 
+    rgba(0, 0, 0, 0.8) 0%, 
+    rgba(51, 51, 51,0.1) 50%, 
+    rgba(0, 0, 0, 0.8) 100%);
+ /*backdrop-filter: blur(10px); opacifie, enlevé  */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.accueil-content {
+  max-width: 900px;
+   margin-top: 120px;
+  animation: fadeInUp 1s ease-out;
+}
+
+.accueil-content h1 {
+  font-size: 3.5em;
+  margin-bottom: 20px;
+  color: #0cff0b;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+ animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from { text-shadow: 2px 2px 8px rgba(12, 255, 11, 0.3); }
+  to { text-shadow: 2px 2px 20px rgba(12, 255, 11, 0.6); }
+}
+
+.accueil-content .subtitle {
+  font-size: 1.4em;
+  margin-bottom: 40px;
+  color: #ccc;
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+}
+
+.features-grid {
+  display: grid;
+grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-5px);
+  background: rgba(12, 255, 11, 0.1);
+  border-color: rgba(12, 255, 11, 0.3);
+}
+
+.feature-card h3 {
+  color: #0cff0b;
+  font-size: 1.3em;
+  margin-bottom: 15px;
+}
+
+.feature-card p {
+  line-height: 1.6;
+  color: #ddd;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 40px;
+}
+
+.btn {
+  font-size: 1.5em;         /* agrandit le texte */
+  padding: 18px 36px;       /* rend le bouton plus visible */
+  background: linear-gradient(45deg, #ff4f4f, #ff9a9a); /* dégradé rouge/gris */
+  border: none;             /* enlève le contour standard */
+  border-radius: 25px;      /* arrondit les coins */
+  color: white;             /* texte blanc */
+  box-shadow: 0 4px 12px rgba(255, 79, 79, 0.3);
+  transition: background 0.3s, transform 0.2s;
+  cursor: pointer;          /* curseur main au survol */
+  background: linear-gradient(45deg, #0cff0b, #00cc00);
+
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(12, 255, 11, 0.5);
+  background: linear-gradient(45deg, #00cc00, #0cff0b);
+}
+
+.btn-secondary {
+  background: linear-gradient(45deg, #666, #888);
+  box-shadow: 0 4px 15px rgba(102, 102, 102, 0.3);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(45deg, #888, #aaa);
+  box-shadow: 0 8px 25px rgba(102, 102, 102, 0.5);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* === PAGE CARTE === */
+.page-carte {
+  background: transparent;
+   z-index: 10;/* Moins élevé que les autres pages */
+}
+
+.carte-container {
+  width: 100%;
+  height: calc(100vh - 80px);
+  position: relative;
+}
+
+.mapzone {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+}
+
+/* === DROPZONE DANS LA PAGE ACCUEIL === */
+.dropzone-container {
+  display: flex;
+  justify-content: center; /* Centre horizontalement */
+  margin: 20px auto;       /* Marge verticale et horizontale automatique */
+  width: 100%;   /*     */
+}
+
+.dropzone {
+  width: 60%;
+  border: 3px dashed #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+  border: 4px solid #0cff0b;
+  padding: 10px; /* Réduit le padding interne de la DropZone */
+  aspect-ratio: 1/1; /* Force un ratio 1:1 (carré) */
+  text-align: center;
+  background: rgba(12, 255, 11, 0.1);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1.3em;
+  position: relative;
+  overflow: hidden;
+}
+
+
+
+.dropzone::before {
+  content: '';
+  position: absolute;
+  top: 0;          /* Aligné en haut du conteneur */
+  left: 0;         /* Aligné à gauche du conteneur */
+  right: 0;        /* Aligné à droite du conteneur */
+  bottom: 0;       /* Aligné en bas du conteneur */
+  background-image: url('ImagesPourconversions/globeNuit.gif');
+  background-position: center;  /* Centre l'image */
+  background-size: cover;        /* Étire l'image pour couvrir toute la zone (ou utilisez 'contain' pour garder les proportions) */
+  background-repeat: no-repeat;  /* Empêche la répétition de l'image */
+  z-index: -1;
+}
+
+.dropzone-text {
+  text-align: center;
+  padding: 5px;
+  font-size: 35px; /* Taille standard pour le texte principal */
+  color: #27F52A;
+}
+
+.dropzone-instructions {
+  margin: 8px 0;
+  font-size: 25px; /* Taille standard pour le texte principal */
+  color: #ffffff;
+}
+
+.dropzone-instructions strong {
+  font-size: 35px; /* Légèrement plus grand pour le titre */
+}
+
+.dropzone-formats {
+  display: block;
+  margin-top: 8px;
+  font-size: 16px; /* Plus petit pour les détails */
+  color: #ffffff;
+  opacity: 0.9; /* Optionnel : légèrement transparent pour un effet discret */
+}
+
+.dropzone:hover {
+  background: rgba(12, 255, 11, 0.2);
+  transform: scale(1.02);
+}
+
+.dropzone.dragover {
+  background: rgba(12, 255, 11, 0.3);
+  border-color: #00ff00;
+  color: #000;
+  transform: scale(1.05);
+}
+
+.dropzone-icon {
+  font-size: 3em;
+  display: block;
+  margin-bottom: 10px;
+}
+/* Centrage et agrandissement des titres */
+.page h1 {
+  text-align: center; /* Centrage horizontal du titre */
+  font-size: 4em; /* Augmentation de la taille du texte (ajustable) */
+  margin-bottom: 20px; /* Espacement en dessous */
+  color: #0cff0b; /* Garde la couleur verte de ton thème */
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8); /* Effet d'ombre */
+}
+
+/* Agrandissement de la dropzone (carré initial) */
+.dropzone {
+  width: 90%; /* Augmente la largeur */
+  max-width: 600px; /* Limite max plus grande */
+  padding: 40px; /* Plus d'espace interne */
+  font-size: 2.5em; /* Texte plus grand dans la dropzone */
+  border-width: 5px; /* Bordure plus épaisse */
+}
+
+}
+/* === RESPONSIVE === */
+
+ /* Ajustement responsive pour mobile */
+@media (max-width: 767px) {
+  .page h1 {
+    font-size: 2.5em; /* Réduction sur mobile pour éviter débordement */
+  } 
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+
+
+  .page {
+    padding-top: 100px;
+  }
+.carte-container {
+  max-width: 1200px;  /* Limite la largeur pour centrage sur grands écrans, comme avant ? */
+  margin: 0 auto;  /* Centrage horizontal */
+}
+
+  .page-carte {
+  display: flex;
+  flex-direction: column;
+  align-items: center;  /* Centrage horizontal */
+  justify-content: center;  /* Centrage vertical si besoin */
+  padding: 20px;
+}
+
+}
+/* === PAGE 	 === */
+.playeur-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.playeur-container .mapzone {
+  width: 100%;
+  height: 100%;
+}
+
+.playeur-container .controls {
+  position: absolute;
+  top: 100px;
+   z-index: 1000;
+}
+.controls.controls-left {
+  position: fixed;    /* reste à l’écran même en scrollant */
+  top: 120px;          /* distance depuis le haut */
+  left: 10px;         /* distance depuis le bord gauche */
+  display: flex;
+  flex-direction: column;  /* alignement vertical */
+  align-items: flex-start;  /* alignement à gauche */
+  gap: 15px;
+  padding: 10px 15px;
+  width: fit-content;
+  color: white;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+
+.controls.controls-right {
+  position: fixed;              /* reste visible à droite même en scrollant */
+  top: 120px;
+  right: 60px;
+  display: flex;
+  flex-direction: column;       /* alignement vertical */
+  align-items: flex-end;
+  gap: 15px;
+  padding: 10px 15px;
+  width: fit-content;
+  color: white;
+  background: rgba(0, 0, 0, 0.2);  /* fond translucide */
+  border-radius: 10px;
+}
+
+.ctrl-btn {
+  font-size: 1.8rem;
+  color: inherit;               /* hérite du blanc du conteneur */
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  padding: 6px 5px;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.2s ease, border-color 0.2s;
+}
+
+.ctrl-btn:hover,
+.ctrl-btn:active {
+  border-color: yellow;
+  background: rgba(255, 255, 0, 0.4);
+}
+
+.ctrl-btn:hover {
+  transform: scale(1.1);
+}
+
+.ctrl-btn:active {
+  transform: scale(1.05);
+}
+
+
+.debug-info {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(73, 245, 39, 0.4);
+  padding: 10px;
+  border: 2px solid #00FF00;
+  border-radius: 30px;
+  font-size: 14px; /* Taille du texte */
+  color: white; /* Couleur du texte  */
+  z-index: 1000;
+  max-width: 600px;
+  font-weight: bold;
+  max-height: 150px;
+  overflow-y: auto;
+  text-align: center; /* Centrer le texte à l'intérieur */
+}
+/* Styles pour le bouton basculant */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 70px;
+  height: 38px;
+}
+
+.toggle-checkbox {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-label {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color:#00663B; /* couleur fond bouton */
+  transition: .4s;
+  border-radius: 38px;
+}
+
+.toggle-label:before {
+  position: absolute;
+  content: "";
+  height: 30px;
+  width: 30px;
+  left: 4px;
+  bottom: 1px;
+
+  background-color:white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+.toggle-checkbox:checked + .toggle-label {
+  background-color:#66E0FF; /* couleur fond bouton */
+  transition: .4s;
+}
+
+.toggle-checkbox:checked + .toggle-label:before {
+  transform: translateX(32px);
+}
+
+.toggle-inner {
+  position: absolute;
+  left: -95px; /* Changé de left à right */
+  width: 70px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px; /* Texte plus grand */
+  font-weight: bold;
+  color: #333;
+  user-select: none;
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-inner::before {
+  content: "VOL";
+}
+
+.toggle-checkbox:not(:checked) + .toggle-label .toggle-inner::before {
+  content: "Sol";
+}
+
+/* Décalage horizontal pour le contrôle Vol */
+.vol-control {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.vol-label {
+  min-width: 60px;
+  margin-right: 10px;
+}
+.mobile-selector {
+    width: 100%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 14px;
+}
+
+.mobile-selector option {
+    font-size: 16px;
+    padding: 5px;
+}
+.mobile-marker {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(255, 194, 184,0.2);
+    border: 1px solid #E4080A;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+/* Style pour les boutons d'exportation */
+
+.export-buttons {
+    display: flex;
+    gap: 15px;
+    padding: 20px 0;
+    justify-content: center; /* Centre les boutons horizontalement */
+    align-items: center; /* Centre verticalement si nécessaire */
+    flex-wrap: wrap; /* Permet le retour à la ligne sur petits écrans */
+    width: 100%; /* Prend toute la largeur disponible */
+    margin: 0 auto; /* Centre le conteneur lui-même (optionnel) */
+
+}
+
+.export-button {
+    display: block;
+    position: relative;
+		background: rgba(255, 255, 255, 0.2); /* Fond légèrement plus opaque au survol */
+    width: 180px; /* Largeur fixe, ajustez si besoin */
+    height: 120px; /* Hauteur fixe, ajustez si besoin */
+    overflow: hidden;
+    border-radius: 5px; /* Optionnel : coins arrondis */
+}
+.export-button:hover {
+    background: rgba(92, 255, 87, 0.6); /* Fond légèrement plus opaque au survol */
+}
+
+.export-button img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: opacity 0.3s; /* Animation douce */
+}
+
+.export-button img.hover {
+    opacity: 0;
+}
+
+.export-button:hover img.normal {
+    opacity: 0;
+}
+
+.export-button:hover img.hover {
+    opacity: 1;
+}
+.textarea-container {
+    width: 80%; /* Largeur du conteneur (ajustez selon vos besoins) */
+    margin: 20px auto; /* Centre horizontalement avec une marge verticale */
+}
+
+.textarea {
+    width: 100%; /* Prend toute la largeur du conteneur */
+    border-radius: 5px;
+    padding: 10px;
+    box-sizing: border-box; /* Inclut le padding dans la largeur totale */
+}
