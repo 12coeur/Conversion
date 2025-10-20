@@ -146,9 +146,11 @@ function initializeApp() {
     setupZScaleControl();
     setupExportButtons();  // ← AJOUTEZ CETTE LIGNE
 	setupVolToggle();  // ← AJOUTEZ CETTE LIGNE
+	setupMobileScaling();  // ← AJOUTEZ CETTE LIGNE
     showPage('accueil');
     console.log("✅ Application initialisée avec succès");
 }
+
 // Configuration de la navigation
 function setupNavigation() {
     console.log("🔧 Configuration de la navigation...");
@@ -240,7 +242,7 @@ function showPage(pageId) {
     }
 }
 
-    // 
+// ← AJOUTEZ CETTE NOUVELLE FONCTION
 function setupVolToggle() {
     const volToggle = document.getElementById('volToggle');
     if (!volToggle) {
@@ -259,7 +261,6 @@ function setupVolToggle() {
     
     console.log("✅ volToggle configuré");
 }
-
 function handlePageTransition(pageId) {
     switch(pageId) {
         case 'carte':
@@ -277,7 +278,7 @@ function handlePageTransition(pageId) {
                         if (!bounds.isEmpty()) {
                             AppState.map.fitBounds(bounds, { 
                                 padding: 80,
-                                pitch: 70,
+                                pitch: 30,
                                 bearing: 0,
                                 maxZoom: 13,
                                 duration: 1000
@@ -311,7 +312,7 @@ function handlePageTransition(pageId) {
 function animatedFitBounds(map, bounds, options = {}) {
     const {
         padding = 80,
-        pitch = 70,
+        pitch = 30,
         bearing = 0,
         maxZoom = 13,
         duration = 2000,
@@ -563,7 +564,7 @@ function initMap() {
             style: `https://api.maptiler.com/maps/hybrid/style.json?key=${MAPTILER_KEY}`,
             center: [2.2137, 46.2276],
             zoom: 5,
-            pitch: 60,
+            pitch: 30, // angle du vue  
             bearing: 0,
             antialias: true
         });
@@ -651,7 +652,7 @@ function initMapPlayeur() {
             style: `https://api.maptiler.com/maps/hybrid/style.json?key=${MAPTILER_KEY}`,
             center: initialCenter,
             zoom: initialZoom,
-            pitch: 75,
+            pitch: 35,
             bearing: 0,
             antialias: true
         });
@@ -703,15 +704,15 @@ function initMapPlayeur() {
         }
     });
 }
-// -------------------------------------------------------------
+// ----------------------------------------------------------------
 function displayTraceOnPlayeur(coordinates, fileName, fileType) {
     if (!AppState.mapPlayeur || !AppState.mapPlayeurInitialized) {
         console.warn("Carte playeur non initialisée");
         return;
     }
-
+    
     console.log(`📍 Affichage trace playeur: ${fileName} (${coordinates.length} points)`);
-
+    
     const geoJSON = {
         type: "FeatureCollection",
         features: [{
@@ -725,8 +726,7 @@ function displayTraceOnPlayeur(coordinates, fileName, fileType) {
             }
         }]
     };
-
-    // Nettoyage de l'ancienne trace
+    
     if (AppState.mapPlayeur.getSource('trace-playeur')) {
         try {
             AppState.mapPlayeur.removeLayer('trace-playeur');
@@ -736,21 +736,21 @@ function displayTraceOnPlayeur(coordinates, fileName, fileType) {
             console.warn("Erreur nettoyage:", e);
         }
     }
-
+    
     // Supprimer l'ancien marqueur s'il existe
     if (AppState.startMarker) {
         AppState.startMarker.remove();
     }
-
+    
     try {
         AppState.mapPlayeur.addSource('trace-playeur', {
             type: 'geojson',
             data: geoJSON
         });
-
+        
         const colorPicker = document.getElementById('traceColor');
         const currentColor = colorPicker ? colorPicker.value : '#ff0000';
-
+        
         AppState.mapPlayeur.addLayer({
             id: 'trace-playeur',
             type: 'line',
@@ -765,109 +765,103 @@ function displayTraceOnPlayeur(coordinates, fileName, fileType) {
                 'line-opacity': 0.9
             }
         });
+	
+  // --- Gestion du mode vol / sol ---
+const volToggle = document.getElementById("volToggle");
+if (volToggle && volToggle.checked) {
+    // Mode vol : trace respecte les altitudes
+    AppState.mapPlayeur.setTerrain(undefined); // Désactive le relief
 
-        // --- Gestion du mode vol / sol ---
-        const volToggle = document.getElementById("volToggle");
-        const zScale = parseFloat(document.getElementById("zScale")?.value || 1.5);
+    // Appliquer les Z d'origine en conservant LineString 3D
+    const elevatedCoords = coordinates.map(coord => [coord[0], coord[1], coord[2] || 0]);
+    AppState.mapPlayeur.getSource("trace-playeur").setData({
+        type: "FeatureCollection",
+        features: [{
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: elevatedCoords },
+            properties: { name: fileName }
+        }]
+    });
+    console.log("Mode VOL actif : la trace utilise la hauteur Z d'origine");
+} else {
+    // Mode sol : plaquée au terrain avec épaisseur/opacité existante
+    try {
+        AppState.mapPlayeur.setTerrain({
+            source: "dem-playeur",
+            exaggeration: parseFloat(document.getElementById("zScale")?.value || 1.5)
+        });
+        console.log("Mode SOL actif : trace plaquée sur le relief 3D");
+    } catch (error) {
+        console.warn("Erreur lors de la réactivation du terrain DEM :", error);
+    }
+}
 
-        if (volToggle && volToggle.checked) {
-            // Mode VOL : relief conservé + altitude réelle + surélévation légère
-            try {
-                AppState.mapPlayeur.setTerrain({
-                    source: "dem-playeur",
-                    exaggeration: zScale
-                });
-
-                const elevatedCoords = coordinates.map(coord => [
-                    coord[0],
-                    coord[1],
-                    (coord[2] || 0) + 50 // +50 m au-dessus du relief
-                ]);
-
-                AppState.mapPlayeur.getSource("trace-playeur").setData({
-                    type: "FeatureCollection",
-                    features: [{
-                        type: "Feature",
-                        geometry: { type: "LineString", coordinates: elevatedCoords },
-                        properties: { name: fileName }
-                    }]
-                });
-
-                console.log("✈️ Mode VOL actif : relief conservé, trace surélevée de +50m");
-            } catch (error) {
-                console.warn("⚠️ Erreur application du mode VOL :", error);
-            }
-
-        } else {
-            // Mode SOL : plaquée sur le relief
-            try {
-                AppState.mapPlayeur.setTerrain({
-                    source: "dem-playeur",
-                    exaggeration: zScale
-                });
-                console.log("🚶 Mode SOL actif : trace plaquée sur le relief");
-            } catch (error) {
-                console.warn("Erreur lors de la réactivation du terrain DEM :", error);
-            }
+   // actualisation immédiate du vol 
+if (volToggle) {
+    volToggle.addEventListener("change", () => {
+        if (AppState.currentCoordinates) {
+            refreshPlayeurTrace();
         }
+    });
+}
 
-        // --- Actualisation immédiate du volToggle ---
-        if (volToggle) {
-            volToggle.addEventListener("change", () => {
-                if (AppState.currentCoordinates) {
-                    refreshPlayeurTrace();
-                }
-            });
-        }
-
+        
         // ===== AJOUT DU MARQUEUR DE DÉPART =====
         if (coordinates.length > 0) {
             const startCoord = coordinates[0];
             const mobileIcon = document.getElementById('mobileIconValue')?.textContent || '✈️';
-
+            
+            // Créer un élément HTML pour le marqueur
             const markerEl = document.createElement('div');
             markerEl.style.fontSize = '32px';
             markerEl.style.cursor = 'pointer';
             markerEl.textContent = mobileIcon;
             markerEl.title = `Départ - ${mobileIcon}`;
-
+            
+            // Créer le marqueur MapLibre
             AppState.startMarker = new maplibregl.Marker({ element: markerEl })
                 .setLngLat([startCoord[0], startCoord[1]])
                 .addTo(AppState.mapPlayeur);
-
+            
             console.log(`✅ Marqueur de départ ajouté: ${mobileIcon} à (${startCoord[1]}, ${startCoord[0]})`);
         }
-
+        // ===== FIN AJOUT MARQUEUR =====
+        
         // ===== AJOUT DE L'ANIMATION =====
+        // Convertir les coordonnées au format attendu par l'animation
         const animationCoordinates = coordinates.map(coord => ({
             lng: coord[0],
             lat: coord[1],
             alt: coord[2] || 0
         }));
-
+        
+        // Initialiser l'animation player
         initSimpleAnimation(AppState.mapPlayeur, animationCoordinates);
         console.log(`🎬 Animation initialisée avec ${animationCoordinates.length} points`);
-
-        // Ajustement de la vue
+        // ===== FIN AJOUT ANIMATION =====
+        
         const bounds = new maplibregl.LngLatBounds();
-        coordinates.forEach(coord => bounds.extend([coord[0], coord[1]]));
+        coordinates.forEach(coord => {
+            bounds.extend([coord[0], coord[1]]);
+        });
+        
         if (!bounds.isEmpty()) {
             animatedFitBounds(AppState.mapPlayeur, bounds, {
                 padding: 80,
-                pitch: 75,
+                pitch: 35,
                 bearing: 0,
                 maxZoom: 13,
                 duration: 2000,
                 rotationDuration: 4000
             });
         }
-
+        
         console.log(`✅ Trace affichée sur playeur: ${coordinates.length} points`);
+        
     } catch (error) {
         console.error("❌ Erreur affichage trace playeur:", error);
     }
 }
-
 // ===============================
 // ANALYSE DES TRACES
 // ===============================
@@ -1647,7 +1641,7 @@ function displayTraceOnMap(coordinates, fileName, fileType, isFlight) {
         if (!bounds.isEmpty()) {
             AppState.map.fitBounds(bounds, { 
                 padding: 80,
-                pitch: 70,
+                pitch: 30,
                 bearing: 0,
                 maxZoom: 13,
                 duration: 2000
@@ -2295,9 +2289,9 @@ function initSimpleAnimation(map, coordinates) {
     }
     simpleAnimationPlayer.init(map, coordinates);
 }
-
 // ===============================
-// MASQUER LES PANNEAUX LATERAUX ET CONTROLES APRÈS INACTIVITÉ
+// MASQUER LES PANNEAUX LATERAUX ET CONTROLES APRÃˆS INACTIVITÃ‰
+// AVEC EFFET DE GLISSEMENT VERS L'EXTERIEUR
 // ===============================
 
 let inactivityTimer = null;
@@ -2329,15 +2323,45 @@ const controlsSelector = `
 function hideControls() {
   if (AppState.currentPage !== 'playeur') return;
 
+  // Ã‰tape 1 : 3 secondes - faire glisser vers l'exterieur
   document.querySelectorAll(controlsSelector).forEach(el => {
-    el.style.transition = 'opacity 0.4s ease';
+    // Dà©tecter si c'est un panneau de gauche ou droite
+    const isLeftPanel = el.classList.contains('controls-left') || 
+                        el.classList.contains('left-panel') ||
+                        el.classList.contains('maplibregl-ctrl-top-left') ||
+                        el.classList.contains('maplibregl-ctrl-bottom-left');
+    
+    const isRightPanel = el.classList.contains('controls-right') || 
+                         el.classList.contains('right-panel') ||
+                         el.classList.contains('maplibregl-ctrl-top-right') ||
+                         el.classList.contains('maplibregl-ctrl-bottom-right');
+
+    // Appliquer l'animation de glissement
+	el.style.transition = 'transform 3s ease-in-out, opacity 2s ease-in-out 3s';
     el.style.opacity = '0';
-    el.style.pointerEvents = 'none';
+  
+  if (isLeftPanel) {
+      el.style.transform = 'translateX(-120%)';
+    } else if (isRightPanel) {
+      el.style.transform = 'translateX(120%)';
+    }
+    
+    // Transparence aprÃ¨s 3 secondes
+    el.style.opacity = '0';
   });
+
+  // Ã‰tape 2 : aprÃ¨s 5 secondes total - complÃ¨tement disparu
+  setTimeout(() => {
+    document.querySelectorAll(controlsSelector).forEach(el => {
+      el.style.pointerEvents = 'none';
+    });
+  }, 5000);
 }
 
 function showControls() {
   document.querySelectorAll(controlsSelector).forEach(el => {
+    el.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+    el.style.transform = 'translateX(0)';
     el.style.opacity = '1';
     el.style.pointerEvents = 'auto';
   });
@@ -2346,7 +2370,7 @@ function showControls() {
 
 function resetInactivityTimer() {
   clearTimeout(inactivityTimer);
-  inactivityTimer = setTimeout(() => hideControls(), 5000); // 5 s d'inactivité
+  inactivityTimer = setTimeout(() => hideControls(), 5000); // 5 s d'inactivitÃ©
 }
 
 ['mousemove', 'mousedown', 'touchstart', 'click', 'keydown'].forEach(evt => {
