@@ -108,7 +108,7 @@ header {
   left: 0;
   width: 100%;
   height: 100vh;
-  padding-top: 80px; /* Espace pour le menu */
+ /*  padding-top: 80px; Espace pour le menu */
   transform: translateY(100%); /* Pages cachées en bas par défaut */
   transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   z-index: 50;
@@ -119,29 +119,34 @@ header {
   transform: translateY(0); /* Page active en position normale */
 }
 
-/* === PAGE ACCUEIL === */
-.page-accueil {
-  background: linear-gradient(135deg, 
-    rgba(0, 0, 0, 0.8) 0%, 
-    rgba(51, 51, 51,0.1) 50%, 
-    rgba(0, 0, 0, 0.8) 100%);
- /*backdrop-filter: blur(10px); opacifie, enlevé  */
+/* === PAGE ACCUEIL === *//* === PAGE ACCUEIL : décalage sous le header pour les pages fixes === */
+#page-accueil {
+  /* comme .page est position:fixed; top:0; => override avec top */
+  top: 80px !important;                         /* décale la page sous le header */
+  height: calc(100vh - 80px) !important;        /* ajuste la hauteur pour ne pas dépasser */
+  left: 0;
+  right: 0;
+  position: fixed;                              /* s'assure que l'on reste en fixed */
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   text-align: center;
-  padding: 40px 20px;
+  justify-content: flex-start;
+  padding: 20px 20px 60px 20px;                 /* padding intérieur souhaité */
+  box-sizing: border-box;
+  overflow-y: auto;                             /* permet le scroll interne si besoin */
+  z-index: 50;                                  /* garde l'ordre d'empilement */
 }
 
-.accueil-content {
-  max-width: 900px;
-   margin-top: 120px;
-  animation: fadeInUp 1s ease-out;
+/* annuler tout margin-top ancien de .accueil-content */
+#page-accueil .accueil-content {
+  margin-top: 0 !important;
 }
+
+
 
 .accueil-content h1 {
-  font-size: 3.5em;
+  font-size: 2.5em;
   margin-bottom: 20px;
   color: #0cff0b;
   text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
@@ -242,7 +247,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 }
 
-/* === PAGE CARTE === */
+
 .page-carte {
   background: transparent;
    z-index: 10;/* Moins élevé que les autres pages */
@@ -250,17 +255,18 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 
 .carte-container {
   width: 100%;
-  height: calc(100vh - 80px);
+  height: calc(100vh);/* ===(100vh - 80px)  === */
   position: relative;
 }
 
 .mapzone {
   width: 100%;
-  height: 100%;
+  height: 100vh;
   border: none;
   border-radius: 0;
+  margin: 0;
+  padding: 0;
 }
-
 /* === DROPZONE DANS LA PAGE ACCUEIL === */
 .dropzone-container {
   display: flex;
@@ -286,7 +292,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 1.3em;
+  font-size: 0.3em;
   position: relative;
   overflow: hidden;
 }
@@ -296,7 +302,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 .dropzone::before {
   content: '';
   position: absolute;
-  top: 0;          /* Aligné en haut du conteneur */
+  top: 0px;          /* Aligné en haut du conteneur */
   left: 0;         /* Aligné à gauche du conteneur */
   right: 0;        /* Aligné à droite du conteneur */
   bottom: 0;       /* Aligné en bas du conteneur */
@@ -310,7 +316,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 .dropzone-text {
   text-align: center;
   padding: 5px;
-  font-size: 35px; /* Taille standard pour le texte principal */
+  /* font-size: 285px; Taille standard pour le texte principal */
   color: #27F52A;
 }
 
@@ -320,9 +326,6 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   color: #ffffff;
 }
 
-.dropzone-instructions strong {
-  font-size: 35px; /* Légèrement plus grand pour le titre */
-}
 
 .dropzone-formats {
   display: block;
@@ -352,7 +355,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 /* Centrage et agrandissement des titres */
 .page h1 {
   text-align: center; /* Centrage horizontal du titre */
-  font-size: 4em; /* Augmentation de la taille du texte (ajustable) */
+  font-size: 2em; /* Augmentation de la taille du texte (ajustable) */
   margin-bottom: 20px; /* Espacement en dessous */
   color: #0cff0b; /* Garde la couleur verte de ton thème */
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8); /* Effet d'ombre */
@@ -363,7 +366,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   width: 90%; /* Augmente la largeur */
   max-width: 600px; /* Limite max plus grande */
   padding: 40px; /* Plus d'espace interne */
-  font-size: 2.5em; /* Texte plus grand dans la dropzone */
+  font-size: 1.5em; /* Texte plus grand dans la dropzone */
   border-width: 5px; /* Bordure plus épaisse */
 }
 
@@ -385,14 +388,77 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     align-items: center;
   }
   
+.page {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  padding-top: 80px; /* Espace pour le menu sur pages normales */
+  transform: translateY(100%);
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 50;
+  overflow-y: auto;
+}
+/* === PAGE CARTE SANS PADDING, FULLSCREEN === */
+#page-carte {
+  padding-top: 0 !important;
+  top: 0 !important;
+  height: 100vh !important;
+}
+
+/* EXCEPTION : Page playeur sans padding, fullscreen */
+#page-playeur {
+  padding-top: 0 !important;
+  top: 0 !important;
+  height: 100vh !important;
+}
 
 
-  .page {
-    padding-top: 100px;
+.page.active {
+  transform: translateY(0);
+}
+
+/* === PAGE PLAYEUR === */
+.playeur-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+.playeur-container .mapzone {
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+/* Augmenter le z-index du menu pour qu'il reste au-dessus de la carte */
+.hamburger {
+  z-index: 1050; /* Plus haut que la carte (z-index: 50) */
+}
+
+.menu {
+  z-index: 1045; /* Légèrement moins que le hamburger */
+}
+
+/* Rendre le menu semi-transparent sur playeur pour voir la carte dessous */
+@media (max-width: 767px) {
+  .menu {
+    background: rgba(51, 51, 51, 0.3); /* Plus transparent */
+    backdrop-filter: blur(5px);
   }
+}
+
 .carte-container {
   max-width: 1200px;  /* Limite la largeur pour centrage sur grands écrans, comme avant ? */
   margin: 0 auto;  /* Centrage horizontal */
+  width: 100%;
+  height: 100vh;
+  position: relative;
+  margin: 0;
+  padding: 0;
 }
 
   .page-carte {
@@ -400,7 +466,9 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   flex-direction: column;
   align-items: center;  /* Centrage horizontal */
   justify-content: center;  /* Centrage vertical si besoin */
-  padding: 20px;
+  padding: 20px; 
+  background: transparent;
+  z-index: 10;
 }
 
 }
@@ -656,4 +724,74 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     border-radius: 5px;
     padding: 10px;
     box-sizing: border-box; /* Inclut le padding dans la largeur totale */
+}
+/* ===============================
+   SCALE DES CONTROLES SUR MOBILE
+   =============================== */
+
+/* Sur écrans mobiles (< 768px) */
+@media (max-width: 767px) {
+    /* Réduire les éléments de contrôle */
+    .ctrl-btn,
+    .debug-info,
+    .slider-container,
+    .control-panel,
+    .player-controls,
+    .toolbar,
+    .left-panel,
+    .right-panel,
+    .controls,
+    .controls-left,
+    .controls-right,
+    .panel-background,
+    label[for="traceWidth"],
+    label[for="traceColor"],
+    label[for="traceOpacity"],
+    label[for="mobileSelector"],
+    label[for="zScale"],
+    .hamburger,
+    .menu,
+    .menu-link {
+        font-size: 0.5rem;
+        padding: calc(0.5rem * 0.5);
+        margin: calc(0.5rem * 0.5);
+        min-width: calc(40px * 0.5);
+        min-height: calc(40px * 0.5);
+    }
+
+    /* Réduire les inputs et selects */
+    #traceWidth,
+    #traceOpacity,
+    #traceColor,
+    #mobileSelector,
+    #zScale,
+    input[type="range"],
+    select {
+        width: calc(100% * 0.5);
+        height: calc(30px * 0.5);
+        font-size: 0.5rem;
+    }
+
+    /* Réduire les values/displays */
+    #traceWidthValue,
+    #traceOpacityValue,
+    #mobileIconValue,
+    #zScaleValue {
+        font-size: 0.5rem;
+    }
+
+    /* Ajuster les espacements */
+    .maplibregl-ctrl-top-left,
+    .maplibregl-ctrl-top-right,
+    .maplibregl-ctrl-bottom-left,
+    .maplibregl-ctrl-bottom-right {
+        font-size: 0.5rem;
+    }
+
+    /* Garder la carte et trace à 100% */
+    #map,
+    #map-playeur,
+    .page {
+        font-size: 1rem;
+    }
 }
