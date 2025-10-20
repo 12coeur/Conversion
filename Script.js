@@ -517,7 +517,7 @@ function handleFile(file) {
     
     if (!AppState.mapInitialized) {
         initMap();
-        AppState.map.once('load', () => {
+		AppState.map.once('load', () => {
             processFile(file);
         });
     } else {
@@ -533,109 +533,97 @@ function initMap() {
     if (AppState.mapInitialized && AppState.map) {
         return;
     }
-    
     console.log("🗺️ INITIALISATION DE LA CARTE");
-    
     const MAPTILER_KEY = "zv0cJDROvQbyb5SevYhh";
     const debugDiv = document.querySelector('.debug-info');
-    
+
     function showMessage(msg, color = '#0066cc') {
         if (debugDiv) {
             debugDiv.innerHTML = `<div style="color: ${color};">${msg}</div>`;
         }
     }
-    
+
     if (typeof maplibregl === 'undefined') {
         showMessage("❌ MapLibre GL JS non chargé", 'red');
         return;
     }
-    
+
     const mapContainer = document.getElementById('map');
     if (!mapContainer) {
         showMessage("❌ Conteneur #map introuvable", 'red');
         return;
     }
-    
+
     showMessage("🔄 Création de la carte...", '#0066cc');
-    
+
     try {
         AppState.map = new maplibregl.Map({
             container: 'map',
             style: `https://api.maptiler.com/maps/hybrid/style.json?key=${MAPTILER_KEY}`,
             center: [2.2137, 46.2276],
             zoom: 5,
-            pitch: 30, // angle du vue  
+            pitch: 30,
             bearing: 0,
             antialias: true
         });
-        
+
         AppState.mapInitialized = true;
         showMessage("✅ Carte créée - Chargement...", 'green');
-        
+
+        AppState.map.on("load", function() {
+            console.log("✅ Carte chargée avec succès");
+            showMessage("✅ Carte chargée - Prête !", 'green');
+
+            try {
+                AppState.map.addSource("dem", {
+                    type: "raster-dem",
+                    url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${MAPTILER_KEY}`
+                });
+
+                AppState.map.setTerrain({ source: "dem", exaggeration: 1.5 });
+
+                // Vérifier si un NavigationControl existe déjà
+                const existingControls = AppState.map._controls?.filter(
+                    ctrl => ctrl instanceof maplibregl.NavigationControl
+                );
+                if (!existingControls || existingControls.length === 0) {
+                    AppState.map.addControl(new maplibregl.NavigationControl(), 'bottom-left');
+                }
+
+                showMessage("🎉 Carte 3D initialisée ! Importez un fichier", 'lime');
+            } catch (error) {
+                showMessage(`⚠️ Carte chargée avec erreurs: ${error.message}`, 'orange');
+            }
+        });
     } catch (error) {
         showMessage(`❌ Erreur création carte: ${error.message}`, 'red');
         return;
     }
-    
-    AppState.map.on("load", function() {
-        console.log("✅ Carte chargée avec succès");
-        showMessage("✅ Carte chargée - Prête !", 'green');
-        
-        try {
-            AppState.map.addSource("dem", {
-                type: "raster-dem",
-                url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${MAPTILER_KEY}`
-            });
-            
-            AppState.map.setTerrain({ source: "dem", exaggeration: 1.5 });
- /*           
-            AppState.map.addLayer({
-                id: "sky",
-                type: "sky",
-                paint: {
-                    "sky-type": "atmosphere",
-                    "sky-atmosphere-sun": [0.0, 90.0],
-                    "sky-atmosphere-sun-intensity": 15
-                }
-            });
-  */          
-            AppState.map.addControl(new maplibregl.NavigationControl());
-            
-            showMessage("🎉 Carte 3D initialisée ! Importez un fichier", 'lime');
-            
-        } catch (error) {
-            showMessage(`⚠️ Carte chargée avec erreurs: ${error.message}`, 'orange');
-        }
-    });
 }
-
 // ===============================
 // CARTE PLAYEUR
 // ===============================
-
 function initMapPlayeur() {
     if (AppState.mapPlayeurInitialized && AppState.mapPlayeur) {
         return;
     }
-    
     console.log("▶️ INITIALISATION DE LA CARTE PLAYEUR");
-    
     const MAPTILER_KEY = "zv0cJDROvQbyb5SevYhh";
-    
+
     if (typeof maplibregl === 'undefined') {
         console.error("❌ MapLibre GL JS non chargé");
         return;
     }
-    
+
     const mapContainer = document.getElementById('map-playeur');
     if (!mapContainer) {
         console.error("❌ Conteneur #map-playeur introuvable");
         return;
     }
-    
+
     let initialCenter = [2.2137, 46.2276];
     let initialZoom = 5;
-    
+
     if (AppState.currentCoordinates && AppState.currentCoordinates.length > 0) {
         const lngs = AppState.currentCoordinates.map(c => c[0]);
         const lats = AppState.currentCoordinates.map(c => c[1]);
@@ -645,7 +633,7 @@ function initMapPlayeur() {
         ];
         initialZoom = 11;
     }
-    
+
     try {
         AppState.mapPlayeur = new maplibregl.Map({
             container: 'map-playeur',
@@ -656,55 +644,47 @@ function initMapPlayeur() {
             bearing: 0,
             antialias: true
         });
-        
+
         AppState.mapPlayeurInitialized = true;
-        
+
+        AppState.mapPlayeur.on("load", function() {
+            console.log("✅ Carte playeur chargée");
+            try {
+                AppState.mapPlayeur.addSource("dem-playeur", {
+                    type: "raster-dem",
+                    url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${MAPTILER_KEY}`
+                });
+
+                const zScaleInput = document.getElementById('zScale');
+                const initialZScale = zScaleInput ? parseFloat(zScaleInput.value) : 1.5;
+
+                AppState.mapPlayeur.setTerrain({ 
+                    source: "dem-playeur", 
+                    exaggeration: initialZScale 
+                });
+
+                // Vérifier si un NavigationControl existe déjà
+                const existingControls = AppState.mapPlayeur._controls?.filter(
+                    ctrl => ctrl instanceof maplibregl.NavigationControl
+                );
+                if (!existingControls || existingControls.length === 0) {
+                    AppState.mapPlayeur.addControl(new maplibregl.NavigationControl(), 'bottom-left');
+                }
+
+                console.log("✅ Relief 3D ajouté au playeur");
+            } catch (error) {
+                console.error("⚠️ Erreur ajout relief playeur:", error);
+            }
+
+            if (AppState.currentCoordinates) {
+                displayTraceOnPlayeur(AppState.currentCoordinates, AppState.currentFileName, AppState.currentFileType);
+            }
+        });
     } catch (error) {
         console.error(`❌ Erreur création carte playeur: ${error.message}`);
         return;
     }
-    
-    AppState.mapPlayeur.on("load", function() {
-        console.log("✅ Carte playeur chargée");
-        
-        try {
-            AppState.mapPlayeur.addSource("dem-playeur", {
-                type: "raster-dem",
-                url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${MAPTILER_KEY}`
-            });
-            
-            const zScaleInput = document.getElementById('zScale');
-            const initialZScale = zScaleInput ? parseFloat(zScaleInput.value) : 1.5;
-
-            AppState.mapPlayeur.setTerrain({ 
-                source: "dem-playeur", 
-                exaggeration: initialZScale 
-            });
-  /*          
-            AppState.mapPlayeur.addLayer({
-                id: "sky-playeur",
-                type: "sky",
-                paint: {
-                    "sky-type": "atmosphere",
-                    "sky-atmosphere-sun": [0.0, 90.0],
-                    "sky-atmosphere-sun-intensity": 15
-                }
-            });
-    */        
-            AppState.mapPlayeur.addControl(new maplibregl.NavigationControl());
-            
-            console.log("✅ Relief 3D ajouté au playeur");
-            
-        } catch (error) {
-            console.error("⚠️ Erreur ajout relief playeur:", error);
-        }
-        
-        if (AppState.currentCoordinates) {
-            displayTraceOnPlayeur(AppState.currentCoordinates, AppState.currentFileName, AppState.currentFileType);
-        }
-    });
-}
-// ----------------------------------------------------------------
+}// ----------------------------------------------------------------
 function displayTraceOnPlayeur(coordinates, fileName, fileType) {
     if (!AppState.mapPlayeur || !AppState.mapPlayeurInitialized) {
         console.warn("Carte playeur non initialisée");
@@ -2318,7 +2298,7 @@ const controlsSelector = `
   .maplibregl-ctrl-top-right,
   .maplibregl-ctrl-bottom-left,
   .maplibregl-ctrl-bottom-right
-`;
+  `;
 
 function hideControls() {
   if (AppState.currentPage !== 'playeur') return;
