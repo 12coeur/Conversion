@@ -5,4 +5,4 @@ C'est à l'étude perso, la pris en compte de Z lorsque la trace s'élève du so
 J'ai supprimé Conversions 
 Ce repository annule le Conversions qui doit être supprimé.
 En définitive les bibliothèque ne sont pas accessible il faut en trouver des pérènes !
- 
+- Modifié pour une meilleure visibilité sur Android
