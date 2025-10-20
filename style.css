@@ -49,9 +49,9 @@ header {
 .menu ul {
   list-style: none;
   display: flex;
-  background: rgba(51, 51, 51, 0.9);
+  background: rgba(51, 51, 51, 0.2);
   padding: 15px;
-  backdrop-filter: blur(5px);
+ /* backdrop-filter: blur(5px);  */
   margin: 0;
 }
 
@@ -87,7 +87,7 @@ header {
     left: 0;
     width: 100%;
     background: rgba(51, 51, 51, 0.95);
-    backdrop-filter: blur(10px);
+  /*  backdrop-filter: blur(10px); */
   }
   .menu.active {
     display: block;
@@ -174,7 +174,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 
 .feature-card {
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(5px);
+ /* backdrop-filter: blur(5px);  */
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 15px;
   padding: 20px;
@@ -446,8 +446,8 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 /* Rendre le menu semi-transparent sur playeur pour voir la carte dessous */
 @media (max-width: 767px) {
   .menu {
-    background: rgba(51, 51, 51, 0.3); /* Plus transparent */
-    backdrop-filter: blur(5px);
+    background: rgba(51, 51, 51, 0.3); /* Plus transparent 
+    /*  backdrop-filter: blur(5px); j'aime pas*/
   }
 }
 
@@ -486,12 +486,12 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 
 .playeur-container .controls {
   position: absolute;
-  top: 100px;
+  top:100px;
    z-index: 1000;
 }
 .controls.controls-left {
   position: fixed;    /* reste à l’écran même en scrollant */
-  top: 120px;          /* distance depuis le haut */
+ /*   top: 300 px;         distance depuis le haut */
   left: 10px;         /* distance depuis le bord gauche */
   display: flex;
   flex-direction: column;  /* alignement vertical */
@@ -506,8 +506,8 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 
 
 .controls.controls-right {
-  position: fixed;              /* reste visible à droite même en scrollant */
-  top: 120px;
+   /*  position: fixed;            reste visible à droite même en scrollant */
+  top: 250px;
   right: 60px;
   display: flex;
   flex-direction: column;       /* alignement vertical */
@@ -728,6 +728,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 /* ===============================
    SCALE DES CONTROLES SUR MOBILE
    =============================== */
+   
 
 /* Sur écrans mobiles (< 768px) */
 @media (max-width: 767px) {
@@ -783,12 +784,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     /* Ajuster les espacements */
     .maplibregl-ctrl-top-left,
     .maplibregl-ctrl-top-right,
-    .maplibregl-ctrl-bottom-left,
-    .maplibregl-ctrl-bottom-right {
-        font-size: 0.5rem;
-    }
-
-    /* Garder la carte et trace à 100% */
+    .maplibregl-ctrl-bottom-left, 
     #map,
     #map-playeur,
     .page {
