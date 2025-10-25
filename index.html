@@ -20,174 +20,181 @@
     </nav>
   </header>
 
-<!-- Page de chargement -->
+  <!-- Page de chargement -->
   <div id="page-accueil" class="page active">
-  
-	<h1>🗺️ Visualiseur 3D GPS</h1>
+    <h1>🗺️ Visualiseur 3D GPS</h1>
     <div class="dropzone-container">
       <div class="dropzone">
         <p>Importez une trace KML, IGC, GPX, TCX</p>
       </div> 
-	
     </div>  
-
   </div>
 
-<!-- Page affiche carte   -->
+  <!-- Page affiche carte -->
   <div id="page-carte" class="page">
     <div class="carte-container">
       <div id="map" class="mapzone"></div>
     </div>
-  <div class="debug-info">Initialisation de la carte...</div>  
+    <div class="debug-info">Initialisation de la carte...</div>  
   </div>
 
-<!-- Page playeur --><!-- Page playeur -->
-<div id="page-playeur" class="page">  
-
+  <!-- Page playeur -->
+  <div id="page-playeur" class="page">  
     <div class="playeur-container">
-        <div id="map-playeur" class="mapzone"></div>
+      <div id="map-playeur" class="mapzone"></div>
 	        
-        <!-- Contrôles gauche -->     
-        <div class="controls controls-left">
-			<div class="control-group"> 
-                <label>Épaisseur: <span id="traceWidthValue">4.0</span>px</label>
-                <input type="range" id="traceWidth" min="1" max="20" step="0.5" value="4">
-        	</div>
-			<div class="control-group"> 
-                <label>Couleur : &#127752;</label>
-                <input type="color" id="traceColor" value="#ff0000">
-            </div>
-            <div class="control-group">
-                <label>Opacité: <span id="traceOpacityValue">0.90</span></label>
-                <input type="range" id="traceOpacity" min="0" max="1" step="0.05" value="0.9">
-            </div>
-	     
-			<div class="control-group">
-    <label>Moyen : <span id="mobileIconValue">	&#128694;</span></label>
-    <select id="mobileSelector" class="mobile-selector">
-        <option value="🚶">🚶 Rando</option>
-        <option value="🥾">🥾 Marche</option>		
-        <option value="🚴">🚴 Vélo</option>
-        <option value="🚗">🚗 Voiture</option>
-        <option value=🏍️ >🏍️ Moto</option>
-	    <option value=️🚤 >🚤️ Bateau</option>	
-        <option value="⛷️">⛷️ Ski</option>
-        <option value="🪂">🪂 Parapente</option>
-        <option value="🏇🏼">🏇🏼 Équitation</option>
-    </select>
-</div>
+      <!-- Contrôles gauche -->     
+      <div class="controls controls-left">
+        <div class="control-group"> 
+          <label>Épaisseur: <span id="traceWidthValue">4.0</span>px</label>
+          <input type="range" id="traceWidth" min="1" max="20" step="0.5" value="4">
+        </div>
+        <div class="control-group"> 
+          <label>Couleur : &#127752;</label>
+          <input type="color" id="traceColor" value="#ff0000">
+        </div>
+        <div class="control-group">
+          <label>Opacité: <span id="traceOpacityValue">0.90</span></label>
+          <input type="range" id="traceOpacity" min="0" max="1" step="0.05" value="0.9">
+        </div>
+        <div class="control-group">
+          <label>Moyen : <span id="mobileIconValue">&#128694;</span></label>
+          <select id="mobileSelector" class="mobile-selector">
+            <option value="🚶">🚶 Rando</option>
+            <option value="🥾">🥾 Marche</option>		
+            <option value="🚴">🚴 Vélo</option>
+            <option value="🚗">🚗 Voiture</option>
+            <option value="🏍️">🏍️ Moto</option>
+            <option value="🚤">🚤️ Bateau</option>	
+            <option value="⛷️">⛷️ Ski</option>
+            <option value="🪂">🪂 Parapente</option>
+            <option value="🏇🏼">🏇🏼 Équitation</option>
+          </select>
+        </div>
+      </div>
+        
+      <!-- Contrôles droite -->
+      <div class="controls controls-right">
+        <!-- Groupe 1: Toggle Vol -->
+        <div class="control-group vol-control">
+          <label class="vol-label">✈️______</label>
+          <div class="toggle-switch">
+            <input type="checkbox" id="volToggle" class="toggle-checkbox">
+            <label for="volToggle" class="toggle-label">
+              <span class="toggle-inner"></span>
+              <span class="toggle-switch"></span>
+            </label>
+          </div>	        
+        </div> 
+            
+        <!-- Groupe 2: Échelle Z -->
+        <div class="control-group">
+          <label>🏔️ Échelle Z : <span id="zScaleValue">1.5</span></label>
+          <input type="range" id="zScale" min="0" max="5" step="0.1" value="1.5">
+        </div>
+            
+        <!-- Groupe 3: Sélection carte -->
+        <div class="control-group">
+          <label for="mapStyleSelect">🗺️ Carte</label>
+          <select id="mapStyleSelect">
+            <option value="hybrid">🌍 Hybride (satellite + routes)</option>
+            <option value="streets">🛣️ Routes</option>
+            <option value="topo">⛰️ Topographique</option>
+            <option value="outdoor">🏞️ Extérieur</option>
+            <option value="toner">🖤 Toner (N&B)</option>
+          </select>
         </div>
         
-        <!-- Contrôles droite - STRUCTURE CORRIGÉE -->
-        <div class="controls controls-right">
-            <!-- Groupe 1: Toggle Vol -->
-            <div class="control-group vol-control">
-                <label class="vol-label">✈️______</label>
-                <div class="toggle-switch">
-                    <input type="checkbox" id="volToggle" class="toggle-checkbox">
-                    <label for="volToggle" class="toggle-label">
-                        <span class="toggle-inner"></span>
-                        <span class="toggle-switch"></span>
-                    </label>
-                </div>	        
-            </div> 
-            
-            <!-- Groupe 2: Échelle Z -->
-            <div class="control-group">
-                <label>🏔️ Échelle Z : <span id="zScaleValue">1.5</span></label>
-                <input type="range" id="zScale" min="0" max="5" step="0.1" value="1.5">
-            </div>
-            
-            <!-- Groupe 3: Sélection carte -->
-            <div class="control-group">
-                <label for="mapStyleSelect">🗺️ Carte</label>
-                <select id="mapStyleSelect">
-                    <option value="hybrid">🌍 Hybride (satellite + routes)</option>
-                    <option value="streets">🛣️ Routes</option>
-                    <option value="topo">⛰️ Topographique</option>
-                    <option value="outdoor">🏞️ Extérieur</option>
-                    <option value="toner">🖤 Toner (N&B)</option>
-                </select>
-            </div>
-            
-            <!-- Groupe 4: Contrôles animation  -->
-            <div class="control-group">
-                <button class="ctrl-btn" title="Retour au début">⏮️</button>
-                <button class="ctrl-btn" title="Lecture/Pause">⏯️</button>
-                <button class="ctrl-btn" title="Avance rapide">⏭️</button>
-                <button class="ctrl-btn" title="Lecture en boucle">🔄</button>
-            </div>
+        <!-- GROUPE PLAYEUR avec boîte 👣 -->
+        <div class="control-group-with-box">
+          <span class="control-group-title">🚲</span>
+          <div class="player-controls">
+            <button class="ctrl-btn" title="Retour au début">⏮️</button>
+            <button class="ctrl-btn" title="Lecture/Pause">▶️</button>
+            <button class="ctrl-btn" title="Avance rapide">⏭️</button>
+            <button class="ctrl-btn" title="Boucle">🔁</button>
+          </div>
         </div>
+
+   <!-- GROUPE CAMÉRA avec boîte 🎥 -->
+        <div class="control-group-with-box">
+          <span class="control-group-title">👁️</span>
+		 
+          <div class="additional-controls">
+            <button class="add-ctrl-btn" id="pitchCycleBtn" data-tooltip="Monte/baisse">🔀</button>
+            <button class="add-ctrl-btn" id="rotationBtn" data-tooltip="Panoramique">🔄</button>
+            <button class="add-ctrl-btn" id="speedUpBtn" data-tooltip="Accélérer">⏩</button>
+            <button class="add-ctrl-btn" id="slowDownBtn" data-tooltip="Décélérer">⏪</button>
+
+          </div> 		
+        </div>
+      </div>
     </div>
-   <!--  <div class="debug-info">Initialisation du playeur...</div>  -->
-</div>
- 
-   <!-- Page Export -->
-<div id="page-export" class="page">
-  <h1>Export Trace</h1>
-
-<p style="text-align: center;">
-Vous pouvez  sélectionner le texte et l'exporter ou directement au format désiré..
-</p>
-  <!-- Début des boutons d'exportation -->
-<div class="export-buttons">
-    <a href="#" class="export-button gpx">
-        <img src="ImagesPourconversions/ExportGPX.png" alt="Exporter en GPX" class="normal">
-        <img src="ImagesPourconversions/ExportGPX_hover.png" alt="Exporter en GPX (hover)" class="hover">
-    </a>
-    <a href="#" class="export-button igc">
-        <img src="ImagesPourconversions/ExportIGC.png" alt="Exporter en IGC" class="normal">
-        <img src="ImagesPourconversions/ExportIGC_hover.png" alt="Exporter en IGC (hover)" class="hover">
-    </a>
-    <a href="#" class="export-button kml">
-        <img src="ImagesPourconversions/ExportKML.png" alt="Exporter en KML" class="normal">
-        <img src="ImagesPourconversions/ExportKML_hover.png" alt="Exporter en KML (hover)" class="hover">
-    </a>
-</div>
-  <!-- Fin des boutons d'exportation -->
-
-
-<div class="textarea-container">
-  <textarea id="trace-content" rows="15" style="width: 90%; font-size: 1.2em;" readonly></textarea>
-</div>
-<!--
-<div class="debug-controls" style="margin-bottom: 10px;">
-    <button onclick="clearDebugInfo()" style="padding: 5px 10px; margin-right: 5px;">🧹 Effacer les logs</button>
-    <button onclick="toggleDebugAutoScroll()" style="padding: 5px 10px;">⏏️ Auto-scroll</button>
-</div>
- --!>
-</div>
   </div>
 
-<!-- Librairies externes -->
-<script src="https://unpkg.com/maplibre-gl@4.7.0/dist/maplibre-gl.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/@mapbox/togeojson@latest/togeojson.js"></script>
-<script src="TraceAnalyzer.js"></script>
-<script src="conversion_trace.js"></script>  <!-- ← IMPORTANT: AVANT Script.js -->
-<script src="Script.js"></script>
+  <!-- Page Export - CORRIGÉE : EN DEHORS DE LA PAGE PLAYEUR -->
+  <div id="page-export" class="page">
+    <h1>Export Trace</h1>
+    <p style="text-align: center;">
+      Vous pouvez sélectionner le texte et l'exporter ou directement au format désiré.
+    </p>
+    
+    <!-- Début des boutons d'exportation -->
+    <div class="export-buttons">
+      <a href="#" class="export-button gpx">
+        <img src="ImagesPourconversions/ExportGPX.png" alt="Exporter en GPX" class="normal">
+        <img src="ImagesPourconversions/ExportGPX_hover.png" alt="Exporter en GPX (hover)" class="hover">
+      </a>
+      <a href="#" class="export-button igc">
+        <img src="ImagesPourconversions/ExportIGC.png" alt="Exporter en IGC" class="normal">
+        <img src="ImagesPourconversions/ExportIGC_hover.png" alt="Exporter en IGC (hover)" class="hover">
+      </a>
+      <a href="#" class="export-button kml">
+        <img src="ImagesPourconversions/ExportKML.png" alt="Exporter en KML" class="normal">
+        <img src="ImagesPourconversions/ExportKML_hover.png" alt="Exporter en KML (hover)" class="hover">
+      </a>
+    </div>
+    <!-- Fin des boutons d'exportation -->
 
+    <div class="textarea-container">
+      <textarea id="trace-content" rows="15" style="width: 90%; font-size: 1.2em;" readonly></textarea>
+    </div>
+    
+    <!--
+    <div class="debug-controls" style="margin-bottom: 10px;">
+      <button onclick="clearDebugInfo()" style="padding: 5px 10px; margin-right: 5px;">🧹 Effacer les logs</button>
+      <button onclick="toggleDebugAutoScroll()" style="padding: 5px 10px;">⏏️ Auto-scroll</button>
+    </div>
+    -->
+  </div>
 
-<script>
-// Script pour gérer l'état du bouton basculant
-document.addEventListener('DOMContentLoaded', function() {
-  const volToggle = document.getElementById('volToggle');
-  
-  // Initialisation à "Non" par défaut
-  volToggle.checked = false;
-  
-  // Mise à jour quand le bouton est basculé
-  volToggle.addEventListener('change', function() {
-    if (this.checked) {
-      // Mode Vol activé
-      console.log("Vol: Oui");
-    } else {
-      // Mode Vol désactivé
-      console.log("Vol: Non");
-    }
+  <!-- Librairies externes -->
+  <script src="https://unpkg.com/maplibre-gl@4.7.0/dist/maplibre-gl.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://unpkg.com/@mapbox/togeojson@latest/togeojson.js"></script>
+ <!--  <script src="TraceAnalyzer.js"></script> il n' a plus   -->
+    <script src="conversion_trace.js"></script> 
+  <script src="Script.js"></script>
+
+  <script>
+  // Script pour gérer l'état du bouton basculant
+  document.addEventListener('DOMContentLoaded', function() {
+    const volToggle = document.getElementById('volToggle');
+    
+    // Initialisation à "Non" par défaut
+    volToggle.checked = false;
+    
+    // Mise à jour quand le bouton est basculé
+    volToggle.addEventListener('change', function() {
+      if (this.checked) {
+        // Mode Vol activé
+        console.log("Vol: Oui");
+      } else {
+        // Mode Vol désactivé
+        console.log("Vol: Non");
+      }
+    });
   });
-});
-</script>
-
+  </script>
 </body>
 </html>
