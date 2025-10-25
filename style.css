@@ -15,9 +15,8 @@ body, html {
   background-attachment: fixed;
   font-family: Arial, sans-serif;
   color: white;
-  overflow-x: hidden; /* Éviter le scroll horizontal */  
-  font-size: 1.2em; /* agrandit tout par défaut */
-
+  overflow-x: hidden;
+  font-size: 1.2em;
 }
 
 /* === MENU PRINCIPAL === */
@@ -27,8 +26,6 @@ header {
   left: 0;
   right: 0;
   z-index: 1000;
-  /* === backdrop-filter: blur(10px); === */
-
 }
 
 .hamburger {
@@ -49,9 +46,8 @@ header {
 .menu ul {
   list-style: none;
   display: flex;
-  background: rgba(51, 51, 51, 0.2);
+  background: rgba(51, 51, 51, 0.85); /* fond du  menu général   */
   padding: 15px;
- /* backdrop-filter: blur(5px);  */
   margin: 0;
 }
 
@@ -70,35 +66,9 @@ header {
 }
 
 .menu a:hover, .menu a.active {
-  background: rgba(12, 255, 11, 0.2);
+  background: rgba(12, 255, 11, 0.4);
   color: #0cff0b;
   transform: translateY(-2px);
-}
-
-/* Responsive : menu mobile */
-@media (max-width: 767px) {
-  .hamburger {
-    display: block;
-  }
-  .menu {
-    display: none;
-    position: fixed;
-    top: 60px;
-    left: 0;
-    width: 100%;
-    background: rgba(51, 51, 51, 0.95);
-  /*  backdrop-filter: blur(10px); */
-  }
-  .menu.active {
-    display: block;
-  }
-  .menu ul {
-    flex-direction: column;
-  }
-  .menu li {
-    padding: 0;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-  }
 }
 
 /* === SYSTÈME DE PAGES === */
@@ -108,49 +78,44 @@ header {
   left: 0;
   width: 100%;
   height: 100vh;
- /*  padding-top: 80px; Espace pour le menu */
-  transform: translateY(100%); /* Pages cachées en bas par défaut */
+  transform: translateY(100%);
   transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   z-index: 50;
   overflow-y: auto;
 }
 
 .page.active {
-  transform: translateY(0); /* Page active en position normale */
+  transform: translateY(0);
 }
 
-/* === PAGE ACCUEIL === *//* === PAGE ACCUEIL : décalage sous le header pour les pages fixes === */
+/* === PAGE ACCUEIL === */
 #page-accueil {
-  /* comme .page est position:fixed; top:0; => override avec top */
-  top: 80px !important;                         /* décale la page sous le header */
-  height: calc(100vh - 80px) !important;        /* ajuste la hauteur pour ne pas dépasser */
+  top: 80px !important;
+  height: calc(100vh - 80px) !important;
   left: 0;
   right: 0;
-  position: fixed;                              /* s'assure que l'on reste en fixed */
+  position: fixed;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   justify-content: flex-start;
-  padding: 20px 20px 60px 20px;                 /* padding intérieur souhaité */
+  padding: 20px 20px 60px 20px;
   box-sizing: border-box;
-  overflow-y: auto;                             /* permet le scroll interne si besoin */
-  z-index: 50;                                  /* garde l'ordre d'empilement */
+  overflow-y: auto;
+  z-index: 50;
 }
 
-/* annuler tout margin-top ancien de .accueil-content */
 #page-accueil .accueil-content {
   margin-top: 0 !important;
 }
-
-
 
 .accueil-content h1 {
   font-size: 2.5em;
   margin-bottom: 20px;
   color: #0cff0b;
   text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
- animation: glow 2s ease-in-out infinite alternate;
+  animation: glow 2s ease-in-out infinite alternate;
 }
 
 @keyframes glow {
@@ -167,14 +132,13 @@ header {
 
 .features-grid {
   display: grid;
-grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 10px;
   margin: 20px 0;
 }
 
 .feature-card {
   background: rgba(255, 255, 255, 0.1);
- /* backdrop-filter: blur(5px);  */
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 15px;
   padding: 20px;
@@ -207,17 +171,15 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 .btn {
-  font-size: 1.5em;         /* agrandit le texte */
-  padding: 18px 36px;       /* rend le bouton plus visible */
-  background: linear-gradient(45deg, #ff4f4f, #ff9a9a); /* dégradé rouge/gris */
-  border: none;             /* enlève le contour standard */
-  border-radius: 25px;      /* arrondit les coins */
-  color: white;             /* texte blanc */
+  font-size: 1.5em;
+  padding: 18px 36px;
+  background: linear-gradient(45deg, #0cff0b, #00cc00);
+  border: none;
+  border-radius: 25px;
+  color: white;
   box-shadow: 0 4px 12px rgba(255, 79, 79, 0.3);
   transition: background 0.3s, transform 0.2s;
-  cursor: pointer;          /* curseur main au survol */
-  background: linear-gradient(45deg, #0cff0b, #00cc00);
-
+  cursor: pointer;
 }
 
 .btn:hover {
@@ -247,15 +209,15 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 }
 
-
+/* === PAGES CARTE === */
 .page-carte {
   background: transparent;
-   z-index: 10;/* Moins élevé que les autres pages */
+  z-index: 10;
 }
 
 .carte-container {
   width: 100%;
-  height: calc(100vh);/* ===(100vh - 80px)  === */
+  height: calc(100vh);
   position: relative;
 }
 
@@ -267,72 +229,67 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   margin: 0;
   padding: 0;
 }
-/* === DROPZONE DANS LA PAGE ACCUEIL === */
+
+/* === DROPZONE === */
 .dropzone-container {
   display: flex;
-  justify-content: center; /* Centre horizontalement */
-  margin: 20px auto;       /* Marge verticale et horizontale automatique */
-  width: 100%;   /*     */
+  justify-content: center;
+  margin: 20px auto;
+  width: 100%;
 }
 
 .dropzone {
-  width: 60%;
-  border: 3px dashed #ccc;
+  width: 90%;
+  max-width: 600px;
+  border: 5px solid #0cff0b;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   position: relative;
   box-sizing: border-box;
-  border: 4px solid #0cff0b;
-  padding: 10px; /* Réduit le padding interne de la DropZone */
-  aspect-ratio: 1/1; /* Force un ratio 1:1 (carré) */
+  padding: 40px;
+  aspect-ratio: 1/1;
   text-align: center;
   background: rgba(12, 255, 11, 0.1);
   border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 0.3em;
-  position: relative;
-  overflow: hidden;
+  font-size: 1.5em;
 }
-
-
 
 .dropzone::before {
   content: '';
   position: absolute;
-  top: 0px;          /* Aligné en haut du conteneur */
-  left: 0;         /* Aligné à gauche du conteneur */
-  right: 0;        /* Aligné à droite du conteneur */
-  bottom: 0;       /* Aligné en bas du conteneur */
+  top: 0px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-image: url('ImagesPourconversions/globeNuit.gif');
-  background-position: center;  /* Centre l'image */
-  background-size: cover;        /* Étire l'image pour couvrir toute la zone (ou utilisez 'contain' pour garder les proportions) */
-  background-repeat: no-repeat;  /* Empêche la répétition de l'image */
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   z-index: -1;
 }
 
 .dropzone-text {
   text-align: center;
   padding: 5px;
-  /* font-size: 285px; Taille standard pour le texte principal */
   color: #27F52A;
 }
 
 .dropzone-instructions {
   margin: 8px 0;
-  font-size: 25px; /* Taille standard pour le texte principal */
+  font-size: 25px;
   color: #ffffff;
 }
-
 
 .dropzone-formats {
   display: block;
   margin-top: 8px;
-  font-size: 16px; /* Plus petit pour les détails */
+  font-size: 16px;
   color: #ffffff;
-  opacity: 0.9; /* Optionnel : légèrement transparent pour un effet discret */
+  opacity: 0.9;
 }
 
 .dropzone:hover {
@@ -352,71 +309,14 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   display: block;
   margin-bottom: 10px;
 }
-/* Centrage et agrandissement des titres */
+
+/* Centrage des titres */
 .page h1 {
-  text-align: center; /* Centrage horizontal du titre */
-  font-size: 2em; /* Augmentation de la taille du texte (ajustable) */
-  margin-bottom: 20px; /* Espacement en dessous */
-  color: #0cff0b; /* Garde la couleur verte de ton thème */
-  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8); /* Effet d'ombre */
-}
-
-/* Agrandissement de la dropzone (carré initial) */
-.dropzone {
-  width: 90%; /* Augmente la largeur */
-  max-width: 600px; /* Limite max plus grande */
-  padding: 40px; /* Plus d'espace interne */
-  font-size: 1.5em; /* Texte plus grand dans la dropzone */
-  border-width: 5px; /* Bordure plus épaisse */
-}
-
-}
-/* === RESPONSIVE === */
-
- /* Ajustement responsive pour mobile */
-@media (max-width: 767px) {
-  .page h1 {
-    font-size: 2.5em; /* Réduction sur mobile pour éviter débordement */
-  } 
-  .features-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
-  .cta-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-.page {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  padding-top: 80px; /* Espace pour le menu sur pages normales */
-  transform: translateY(100%);
-  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  z-index: 50;
-  overflow-y: auto;
-}
-/* === PAGE CARTE SANS PADDING, FULLSCREEN === */
-#page-carte {
-  padding-top: 0 !important;
-  top: 0 !important;
-  height: 100vh !important;
-}
-
-/* EXCEPTION : Page playeur sans padding, fullscreen */
-#page-playeur {
-  padding-top: 0 !important;
-  top: 0 !important;
-  height: 100vh !important;
-}
-
-
-.page.active {
-  transform: translateY(0);
+  text-align: center;
+  font-size: 2em;
+  margin-bottom: 20px;
+  color: #0cff0b;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }
 
 /* === PAGE PLAYEUR === */
@@ -434,68 +334,20 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   margin: 0;
   padding: 0;
 }
-/* Augmenter le z-index du menu pour qu'il reste au-dessus de la carte */
-.hamburger {
-  z-index: 1050; /* Plus haut que la carte (z-index: 50) */
-}
-
-.menu {
-  z-index: 1045; /* Légèrement moins que le hamburger */
-}
-
-/* Rendre le menu semi-transparent sur playeur pour voir la carte dessous */
-@media (max-width: 767px) {
-  .menu {
-    background: rgba(51, 51, 51, 0.3); /* Plus transparent 
-    /*  backdrop-filter: blur(5px); j'aime pas*/
-  }
-}
-
-.carte-container {
-  max-width: 1200px;  /* Limite la largeur pour centrage sur grands écrans, comme avant ? */
-  margin: 0 auto;  /* Centrage horizontal */
-  width: 100%;
-  height: 100vh;
-  position: relative;
-  margin: 0;
-  padding: 0;
-}
-
-  .page-carte {
-  display: flex;
-  flex-direction: column;
-  align-items: center;  /* Centrage horizontal */
-  justify-content: center;  /* Centrage vertical si besoin */
-  padding: 20px; 
-  background: transparent;
-  z-index: 10;
-}
-
-}
-/* === PAGE 	 === */
-.playeur-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.playeur-container .mapzone {
-  width: 100%;
-  height: 100%;
-}
 
 .playeur-container .controls {
   position: absolute;
-  top:100px;
-   z-index: 1000;
+  top: 100px;
+  z-index: 1000;
 }
+
+/* CONTROLES GAUCHE ET DROITE */
 .controls.controls-left {
-  position: fixed;    /* reste à l’écran même en scrollant */
- /*   top: 300 px;         distance depuis le haut */
-  left: 10px;         /* distance depuis le bord gauche */
+  position: fixed;
+  left: 10px;
   display: flex;
-  flex-direction: column;  /* alignement vertical */
-  align-items: flex-start;  /* alignement à gauche */
+  flex-direction: column;
+  align-items: flex-start;
   gap: 15px;
   padding: 10px 15px;
   width: fit-content;
@@ -504,25 +356,25 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   border-radius: 10px;
 }
 
-
 .controls.controls-right {
-   /*  position: fixed;            reste visible à droite même en scrollant */
-  top: 250px;
+  position: fixed;
+  top: 350px;
   right: 60px;
   display: flex;
-  flex-direction: column;       /* alignement vertical */
+  flex-direction: column;
   align-items: flex-end;
   gap: 15px;
   padding: 10px 15px;
   width: fit-content;
   color: white;
-  background: rgba(0, 0, 0, 0.2);  /* fond translucide */
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 10px;
 }
 
+/* BOUTONS DE CONTRÔLE */
 .ctrl-btn {
   font-size: 1.8rem;
-  color: inherit;               /* hérite du blanc du conteneur */
+  color: inherit;
   background: rgba(255, 255, 255, 0.15);
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 8px;
@@ -545,7 +397,114 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   transform: scale(1.05);
 }
 
+/* CONTRÔLES SUPPLÉMENTAIRES */
+.additional-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 15px;
+}
 
+.add-ctrl-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.add-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: scale(1.1);
+}
+
+.add-ctrl-btn.active {
+  background: rgba(76, 175, 80, 0.5);
+  border-color: #4CAF50;
+}
+
+.speed-indicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: rgba(255, 82, 34, 0.9);
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.add-ctrl-btn::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 360px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.add-ctrl-btn:hover::after {
+  opacity: 1;
+}
+
+/* GROUPES 👣 ET 🎥 SUR LA MÊME LIGNE */
+.control-group-with-box {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.control-group-title {
+  font-size: 1.8em;
+  min-width: 40px;
+  text-align: center;
+}
+
+.control-group-title.footsteps {
+  font-size: 2.2em;
+}
+
+.player-controls,
+.additional-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.control-group-with-box:hover {
+  background: rgba(12, 255, 11, 0.2);
+  border-color: rgba(12, 255, 11, 0.4);
+}
+
+/* DEBUG INFO */
 .debug-info {
   position: absolute;
   bottom: 10px;
@@ -555,16 +514,17 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   padding: 10px;
   border: 2px solid #00FF00;
   border-radius: 30px;
-  font-size: 14px; /* Taille du texte */
-  color: white; /* Couleur du texte  */
-  z-index: 1000;
+  font-size: 14px;
+  color: white;
+  z-index: 5000;
   max-width: 600px;
   font-weight: bold;
   max-height: 150px;
   overflow-y: auto;
-  text-align: center; /* Centrer le texte à l'intérieur */
+  text-align: center;
 }
-/* Styles pour le bouton basculant */
+
+/* TOGGLE SWITCH */
 .toggle-switch {
   position: relative;
   display: inline-block;
@@ -585,7 +545,7 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   left: 0;
   right: 0;
   bottom: 0;
-  background-color:#00663B; /* couleur fond bouton */
+  background-color: #00663B;
   transition: .4s;
   border-radius: 38px;
 }
@@ -597,14 +557,13 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   width: 30px;
   left: 4px;
   bottom: 1px;
-
-  background-color:white;
+  background-color: white;
   transition: .4s;
   border-radius: 50%;
 }
 
 .toggle-checkbox:checked + .toggle-label {
-  background-color:#66E0FF; /* couleur fond bouton */
+  background-color: #66E0FF;
   transition: .4s;
 }
 
@@ -614,13 +573,13 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 
 .toggle-inner {
   position: absolute;
-  left: -95px; /* Changé de left à right */
+  left: -95px;
   width: 70px;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px; /* Texte plus grand */
+  font-size: 16px;
   font-weight: bold;
   color: #333;
   user-select: none;
@@ -634,7 +593,6 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   content: "Sol";
 }
 
-/* Décalage horizontal pour le contrôle Vol */
 .vol-control {
   display: flex;
   align-items: center;
@@ -645,149 +603,772 @@ grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   min-width: 60px;
   margin-right: 10px;
 }
+
+/* SELECTEURS MOBILES */
 .mobile-selector {
-    width: 100%;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: white;
-    font-size: 14px;
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
 }
 
 .mobile-selector option {
-    font-size: 16px;
-    padding: 5px;
+  font-size: 16px;
+  padding: 5px;
 }
+
 .mobile-marker {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    padding: 8px;
-    box-shadow: 0 2px 8px rgba(255, 194, 184,0.2);
-    border: 1px solid #E4080A;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  padding: 8px;
+  box-shadow: 0 2px 8px rgba(255, 194, 184,0.2);
+  border: 1px solid #E4080A;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
 }
-/* Style pour les boutons d'exportation */
 
+/* EXPORT */
 .export-buttons {
-    display: flex;
-    gap: 15px;
-    padding: 20px 0;
-    justify-content: center; /* Centre les boutons horizontalement */
-    align-items: center; /* Centre verticalement si nécessaire */
-    flex-wrap: wrap; /* Permet le retour à la ligne sur petits écrans */
-    width: 100%; /* Prend toute la largeur disponible */
-    margin: 0 auto; /* Centre le conteneur lui-même (optionnel) */
-
+  display: flex;
+  gap: 15px;
+  padding: 20px 0;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .export-button {
-    display: block;
-    position: relative;
-		background: rgba(255, 255, 255, 0.2); /* Fond légèrement plus opaque au survol */
-    width: 180px; /* Largeur fixe, ajustez si besoin */
-    height: 120px; /* Hauteur fixe, ajustez si besoin */
-    overflow: hidden;
-    border-radius: 5px; /* Optionnel : coins arrondis */
+  display: block;
+  position: relative;
+  background: rgba(255, 255, 255, 0.2);
+  width: 180px;
+  height: 120px;
+  overflow: hidden;
+  border-radius: 5px;
 }
+
 .export-button:hover {
-    background: rgba(92, 255, 87, 0.6); /* Fond légèrement plus opaque au survol */
+  background: rgba(92, 255, 87, 0.6);
 }
 
 .export-button img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    transition: opacity 0.3s; /* Animation douce */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.3s;
 }
 
 .export-button img.hover {
-    opacity: 0;
+  opacity: 0;
 }
 
 .export-button:hover img.normal {
-    opacity: 0;
+  opacity: 0;
 }
 
 .export-button:hover img.hover {
-    opacity: 1;
+  opacity: 1;
 }
+
 .textarea-container {
-    width: 80%; /* Largeur du conteneur (ajustez selon vos besoins) */
-    margin: 20px auto; /* Centre horizontalement avec une marge verticale */
+  width: 80%;
+  margin: 20px auto;
 }
 
 .textarea {
-    width: 100%; /* Prend toute la largeur du conteneur */
-    border-radius: 5px;
-    padding: 10px;
-    box-sizing: border-box; /* Inclut le padding dans la largeur totale */
+  width: 100%;
+  border-radius: 5px;
+  padding: 10px;
+  box-sizing: border-box;
+}
+/* === PAGE EXPORT === */
+#page-export {
+  top: 80px !important;
+  height: calc(100vh - 80px) !important;
+  left: 0;
+  right: 0;
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: flex-start;
+  padding: 20px 20px 60px 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+/* Style pour le texte centré de la page export */
+#page-export p {
+  text-align: center;
+  margin: 20px 0;
+  font-size: 1.1em;
+  color: #ddd;
+  line-height: 1.6;
+}
+
+/* Ajustement responsive pour la page export */
+@media (max-width: 767px) {
+  #page-export {
+    padding: 15px 15px 40px 15px;
+  }
+  
+  #page-export p {
+    font-size: 1em;
+    margin: 15px 0;
+  }
 }
 /* ===============================
-   SCALE DES CONTROLES SUR MOBILE
+   STYLE SIMPLIFIÉ DES CURSEURS
    =============================== */
-   
 
-/* Sur écrans mobiles (< 768px) */
+/* Curseur d'épaisseur - vert fixe */
+#traceWidth {
+  background: linear-gradient(to right, 
+      rgba(12, 255, 11, 0.3), 
+      rgba(12, 255, 11, 0.9)
+  );
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+}
+
+#traceWidth::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0cff0b;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+#traceWidth::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0cff0b;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+/* Curseur d'opacité - vert fixe */
+#traceOpacity {
+  background: linear-gradient(to right, 
+      rgba(12, 255, 11, 0.1), 
+      rgba(12, 255, 11, 0.9)
+  );
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+}
+
+#traceOpacity::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0cff0b;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+#traceOpacity::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0cff0b;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+/* Curseur d'échelle Z - vert fixe */
+#zScale {
+  background: linear-gradient(to right, 
+      rgba(12, 255, 11, 0.3), 
+      rgba(12, 255, 11, 0.9)
+  );
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+}
+
+#zScale::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0cff0b;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+#zScale::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0cff0b;
+  border: 2px solid white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+/* Style amélioré pour le sélecteur de couleur */
+#traceColor {
+  width: 50px;
+  height: 30px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  cursor: pointer;
+  background: #ff0000;
+  transition: all 0.3s ease;
+}
+
+#traceColor:hover {
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: scale(1.05);
+}
+
+/* Style pour les valeurs affichées */
+#traceWidthValue,
+#traceOpacityValue,
+#zScaleValue {
+  color: #0cff0b;
+  font-weight: bold;
+  text-shadow: 0 0 3px rgba(12, 255, 11, 0.5);
+}
+
+/* ===============================
+   RESPONSIVE MOBILE
+   =============================== */
+
 @media (max-width: 767px) {
-    /* Réduire les éléments de contrôle */
-    .ctrl-btn,
-    .debug-info,
-    .slider-container,
-    .control-panel,
-    .player-controls,
-    .toolbar,
-    .left-panel,
-    .right-panel,
-    .controls,
-    .controls-left,
-    .controls-right,
-    .panel-background,
-    label[for="traceWidth"],
-    label[for="traceColor"],
-    label[for="traceOpacity"],
-    label[for="mobileSelector"],
-    label[for="zScale"],
-    .hamburger,
-    .menu,
-    .menu-link {
-        font-size: 0.5rem;
-        padding: calc(0.5rem * 0.5);
-        margin: calc(0.5rem * 0.5);
-        min-width: calc(40px * 0.5);
-        min-height: calc(40px * 0.5);
-    }
+  .hamburger {
+    display: block;
+  }
+  .hamburger {
+    font-size: 1.6rem !important; /* augmente la taille de l’icône hamburger */
+    padding: 15px !important;     /* restaure un peu d’espace autour */
+  }
+  .menu {
+    display: none;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    width: 100%;
+    background: rgba(51, 51, 51, 0.95);
+  }
+  
+  .menu.active {
+    display: block;
+  }
+  
+  .menu ul {
+    flex-direction: column;
+  }
+  
+  .menu li {
+    padding: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  
+  .page h1 {
+    font-size: 2.5em;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .page {
+    padding-top: 80px;
+  }
+  
+  #page-carte,
+  #page-playeur {
+    padding-top: 0 !important;
+    top: 0 !important;
+    height: 100vh !important;
+  }
+  
+  .menu {
+    background: rgba(51, 51, 51, 0.6);
+  }
+  
+  /* RÉDUCTION DES CONTRÔLES MOBILE */
+  .ctrl-btn,
+  .debug-info,
+  .player-controls,
+  .controls,
+  .controls-left,
+  .controls-right,
+  label[for="traceWidth"],
+  label[for="traceColor"],
+  label[for="traceOpacity"],
+  label[for="mobileSelector"],
+  label[for="zScale"],
+  .hamburger,
+  .menu,
+  .menu-link,
+  .additional-controls,
+  .add-ctrl-btn,
+  .control-group,
+  .vol-control,
+  .vol-label,
+  .toggle-switch,
+  .toggle-label,
+  .toggle-inner {
+    font-size: 1.0rem;  /* taille des menus controls ------------------------*/
+    padding: calc(0.5rem * 0.5);
+    margin: calc(0.5rem * 0.5);
+  }
 
-    /* Réduire les inputs et selects */
-    #traceWidth,
-    #traceOpacity,
-    #traceColor,
-    #mobileSelector,
-    #zScale,
-    input[type="range"],
-    select {
-        width: calc(100% * 0.5);
-        height: calc(30px * 0.5);
-        font-size: 0.5rem;
-    }
+  #traceWidth,
+  #traceOpacity,
+  #traceColor,
+  #mobileSelector,
+  #zScale,
+  #mapStyleSelect,
+  #volToggle,
+  input[type="range"],
+  input[type="color"],
+  select {
+    width: calc(100% * 0.5);
+    height: calc(30px * 0.5);
+    font-size: 0.5rem;
+  }
 
-    /* Réduire les values/displays */
-    #traceWidthValue,
-    #traceOpacityValue,
-    #mobileIconValue,
-    #zScaleValue {
-        font-size: 0.5rem;
-    }
+  #traceWidthValue,
+  #traceOpacityValue,
+  #mobileIconValue,
+  #zScaleValue {
+    font-size: 0.5rem;
+  }
 
-    /* Ajuster les espacements */
-    .maplibregl-ctrl-top-left,
-    .maplibregl-ctrl-top-right,
-    .maplibregl-ctrl-bottom-left, 
-    #map,
-    #map-playeur,
-    .page {
-        font-size: 1rem;
+  .speed-indicator {
+    font-size: calc(10px * 0.5);
+    padding: calc(2px * 0.5) calc(6px * 0.5);
+    top: calc(-8px * 0.5);
+    right: calc(-8px * 0.5);
+    min-width: calc(20px * 0.5);
+  }
+  
+  .add-ctrl-btn::after {
+    font-size: calc(12px * 0.5);
+    padding: calc(6px * 0.5) calc(12px * 0.5);
+    bottom: calc(60px * 0.5);
+  }
+
+  .additional-controls {
+    gap: calc(10px * 0.5);
+    margin-top: calc(15px * 0.5);
+  }
+  
+  /* RÉDUCTION DES BOX SEMI-OPAQUES */
+  .controls.controls-left,
+  .controls.controls-right {
+    padding: calc(10px * 0.5) calc(15px * 0.5);
+    border-radius: calc(10px * 0.5);
+    gap: calc(15px * 0.5);
+    background: rgba(0, 0, 0, 0.3);
+  }
+  
+  .control-group {
+    padding: calc(5px * 0.5);
+    margin: calc(5px * 0.5);
+    gap: calc(8px * 0.5);
+  }
+  
+  .player-controls,
+  .vol-control,
+  .additional-controls {
+    gap: calc(10px * 0.5);
+    padding: calc(5px * 0.5);
+  }
+  
+  .controls.controls-left .control-group,
+  .controls.controls-right .control-group {
+    margin-bottom: calc(10px * 0.5);
+  }
+  
+  .controls.controls-left,
+  .controls.controls-right {
+    min-height: auto;
+  }
+  
+  /* GROUPES 👣 ET 🎥 MOBILE */
+  .control-group-with-box {
+    padding: calc(8px * 0.5) calc(12px * 0.5);
+    border-radius: calc(8px * 0.5);
+    margin-bottom: calc(10px * 0.5);
+    gap: calc(10px * 0.5);
+  }
+  
+  .control-group-title {
+    font-size: calc(1.8em * 0.5);
+    min-width: calc(40px * 0.5);
+  }
+  
+  .control-group-title.footsteps {
+    font-size: calc(2.2em * 0.5);
+  }
+  
+  .player-controls,
+  .additional-controls {
+    gap: calc(8px * 0.5);
+  }
+
+  /* CURSEURS MOBILE */
+  #traceWidth,
+  #traceOpacity,
+  #zScale {
+    height: calc(6px * 0.5);
+    border-radius: calc(3px * 0.5);
+  }
+  
+  #traceWidth::-webkit-slider-thumb,
+  #traceOpacity::-webkit-slider-thumb,
+  #zScale::-webkit-slider-thumb {
+    width: calc(18px * 0.5);
+    height: calc(18px * 0.5);
+  }
+  
+  #traceWidth::-moz-range-thumb,
+  #traceOpacity::-moz-range-thumb,
+  #zScale::-moz-range-thumb {
+    width: calc(18px * 0.5);
+    height: calc(18px * 0.5);
+  }
+  
+  #traceColor {
+    width: calc(50px * 0.5);
+    height: calc(30px * 0.5);
+  }
+}
+
+/* ===============================
+   CORRECTION MAPLIBRE
+   =============================== */
+
+.maplibregl-ctrl-top-left,
+.maplibregl-ctrl-top-right, 
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
+  font-size: 12px;
+}
+
+.maplibregl-ctrl-group {
+  transform-origin: top left;
+}
+
+@media (max-width: 767px) {
+  .maplibregl-ctrl-top-left,
+  .maplibregl-ctrl-top-right,
+  .maplibregl-ctrl-bottom-left,
+  .maplibregl-ctrl-bottom-right {
+    font-size: 8px;
+    transform: scale(0.7);
+    transform-origin: top left;
+  }
+  
+  .maplibregl-ctrl-bottom-left {
+    transform-origin: bottom left;
+  }
+  
+  .maplibregl-ctrl-bottom-right {
+    transform-origin: bottom right;
+  }
+  
+  .maplibregl-ctrl-bottom-left .maplibregl-ctrl {
+    margin-bottom: 5px;
+    margin-left: 5px;
+  }
+}
+
+@media (min-width: 768px) {
+  .maplibregl-ctrl-top-left,
+  .maplibregl-ctrl-top-right,
+  .maplibregl-ctrl-bottom-left,
+  .maplibregl-ctrl-bottom-right {
+    font-size: 12px;
+    transform: scale(1);
+  }
+}
+/* =============================================================================
+   AMÉLIORATIONS SUPPLÉMENTAIRES POUR LES CONTRÔLES CAMÉRA
+   ============================================================================= */
+
+/* Style pour les boutons caméra actifs */
+.add-ctrl-btn.active {
+    background: rgba(12, 255, 11, 0.3) !important;
+    border-color: #0cff0b !important;
+    box-shadow: 0 0 15px rgba(12, 255, 11, 0.5);
+}
+
+/* Animation de pulsation pour les boutons actifs */
+@keyframes pulse-active {
+    0%, 100% { 
+        box-shadow: 0 0 10px rgba(12, 255, 11, 0.4);
     }
+    50% { 
+        box-shadow: 0 0 20px rgba(12, 255, 11, 0.8);
+    }
+}
+
+.add-ctrl-btn.active {
+    animation: pulse-active 2s infinite;
+}
+
+/* Style spécifique pour le bouton de rotation quand actif */
+#rotationBtn.active {
+    animation: spin 4s linear infinite, pulse-active 2s infinite;
+}
+
+/* Feedback visuel pour les boutons désactivés */
+.add-ctrl-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* Amélioration des tooltips */
+.add-ctrl-btn[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-bottom: 8px;
+    pointer-events: none;
+    z-index: 1000;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.add-ctrl-btn[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    margin-bottom: 3px;
+    pointer-events: none;
+    z-index: 1000;
+}
+/* Animation de rotation pour le bouton rotation */
+@keyframes spin {
+    from { 
+        transform: rotate(0deg); 
+    }
+    to { 
+        transform: rotate(360deg); 
+    }
+}
+
+/* Amélioration des boutons de contrôle */
+.add-ctrl-btn {
+    transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Effet au clic */
+.add-ctrl-btn:active {
+    transform: scale(0.95);
+}
+
+/* Effet hover amélioré */
+.add-ctrl-btn:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Indicateur de vitesse */
+.speed-indicator {
+    font-size: 0.75em;
+    font-weight: bold;
+    margin-left: 3px;
+    color: inherit;
+    display: inline-block;
+    min-width: 20px;
+    text-align: center;
+}
+
+/* État actif des boutons (rotation, boucle) */
+.add-ctrl-btn[style*="background-color: rgb(76, 175, 80)"],
+.add-ctrl-btn[style*="background-color: #4CAF50"] {
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.6);
+}
+
+/* Tooltips améliorés */
+.add-ctrl-btn[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-bottom: 8px;
+    pointer-events: none;
+    z-index: 1000;
+    animation: fadeInTooltip 0.2s ease;
+}
+
+.add-ctrl-btn[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+    margin-bottom: 3px;
+    pointer-events: none;
+    z-index: 1000;
+}
+/* Messages d'erreur/orange */
+.add-ctrl-btn.warning {
+    background: rgba(255, 152, 0, 0.5) !important;
+    animation: pulse-warning 1s infinite;
+}
+
+@keyframes pulse-warning {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+@keyframes fadeInTooltip {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Effet de pulsation pour les boutons actifs */
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+    }
+}
+
+.add-ctrl-btn.active {
+    animation: pulse 2s infinite;
+}
+
+/* Style spécifique pour le bouton de rotation quand actif */
+#rotationBtn[style*="animation"] {
+    background-color: #4CAF50 !important;
+}
+
+/* Groupe de contrôles avec effet de survol */
+.control-group-with-box {
+    transition: all 0.3s ease;
+}
+
+.control-group-with-box:hover {
+    transform: translateX(-5px);
+}
+
+/* Amélioration de la lisibilité des boutons */
+.ctrl-btn, .add-ctrl-btn {
+    font-size: 18px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+/* Feedback visuel pour les boutons désactivés */
+.add-ctrl-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Animation de feedback pour les changements de vitesse */
+@keyframes speedChange {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+#speedBtn .speed-indicator {
+    display: inline-block;
+    animation: speedChange 0.3s ease;
+}
+
+/* Indicateur visuel pour pitch up/down */
+#pitchUpBtn:active::after,
+#pitchDownBtn:active::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+    animation: flashButton 0.3s ease;
+}
+
+@keyframes flashButton {
+    0%, 100% {
+        opacity: 0;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+/* Animation de rotation pour le bouton rotation actif */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Bouton rotation quand actif */
+#rotationBtn.active {
+    animation: spin 2s linear infinite;
+    background: rgba(76, 175, 80, 0.3) !important;
+    border-color: #4CAF50 !important;
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
 }
