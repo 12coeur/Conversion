@@ -22,11 +22,390 @@ const AppState = {
 // Variable globale pour stocker le contenu brut du fichier
 let currentRawContent = "";
 
+// ===============================
+// FONCTIONS CAMÉRA 
+// ===============================
+
+function startPitchCycle(map, cameraState) {
+    if (cameraState.pitchCycleInterval) clearInterval(cameraState.pitchCycleInterval);
+    if (!map) {
+        console.error("Carte non disponible au démarrage du cycle pitch");
+        cameraState.isPitchCycling = false;
+        return;
+    }
+
+    // Angle de départ
+    const basePitch = map.getPitch();
+    cameraState.isPitchCycling = true;
+
+    // Direction initiale (1 = monte, -1 = descend)
+    cameraState.pitchDirection = 1;
+
+    // Amplitude de ±10° autour de l’angle initial
+    const amplitude = 10;
+    const pitchMin = Math.max(0, basePitch - amplitude);
+    const pitchMax = Math.min(80, basePitch + amplitude);
+
+    cameraState.pitchCycleInterval = setInterval(() => {
+        if (!cameraState.isPitchCycling) {
+            clearInterval(cameraState.pitchCycleInterval);
+            return;
+        }
+
+        let currentPitch = map.getPitch();
+        let newPitch = currentPitch + 1.5 * cameraState.pitchDirection;
+
+        // Inverser la direction aux bornes
+        if (newPitch >= pitchMax) {
+            newPitch = pitchMax;
+            cameraState.pitchDirection = -1;
+        } else if (newPitch <= pitchMin) {
+            newPitch = pitchMin;
+            cameraState.pitchDirection = 1;
+        }
+
+        map.easeTo({
+            pitch: newPitch,
+            duration: 200,
+            essential: true
+        });
+
+        console.log(`Pitch: ${currentPitch.toFixed(1)}° → ${newPitch.toFixed(1)}°, direction: ${cameraState.pitchDirection}`);
+    }, 200);
+}
+
+
+function stopPitchCycle(cameraState) {
+    console.log("⏹️ Arrêt du cycle pitch");
+    cameraState.isPitchCycling = false;
+    if (cameraState.pitchCycleInterval) {
+        clearInterval(cameraState.pitchCycleInterval);
+        cameraState.pitchCycleInterval = null;
+    }
+    const pitchCycleBtn = document.getElementById('pitchCycleBtn');
+    if (pitchCycleBtn) {
+        pitchCycleBtn.classList.remove('active');
+        pitchCycleBtn.style.backgroundColor = '';
+    }
+    showCameraFeedback("Cycle Monte/Baisse", "ARRÊTÉ");
+}
+function resetPitchCycle(cameraState) {
+    console.log("🔄 Réinitialisation du cycle pitch");
+    cameraState.isPitchCycling = false;
+    if (cameraState.pitchCycleInterval) {
+        clearInterval(cameraState.pitchCycleInterval);
+        cameraState.pitchCycleInterval = null;
+    }
+    cameraState.pitchDirection = -1; // Redémarrer en descente
+    
+    const pitchCycleBtn = document.getElementById('pitchCycleBtn');
+    if (pitchCycleBtn) {
+        pitchCycleBtn.classList.remove('active');
+        pitchCycleBtn.style.backgroundColor = '';
+    }
+}
+function startCameraRotation(map, cameraState) {
+    if (cameraState.rotationInterval) {
+        clearInterval(cameraState.rotationInterval);
+        console.log("🔄 Intervalle rotation précédent effacé");
+    }
+    
+    if (!map) {
+        console.error("❌ Carte non disponible au démarrage de la rotation");
+        cameraState.isRotating = false;
+        showCameraFeedback("Erreur", "Carte non disponible pour la rotation");
+        return;
+    }
+    
+    cameraState.rotationInterval = setInterval(() => {
+        if (!cameraState.isRotating) {
+            console.log("⏹️ Arrêt de la rotation : isRotating est false");
+            stopCameraRotation(cameraState);
+            return;
+        }
+        
+        try {
+            const currentBearing = map.getBearing();
+            const newBearing = (currentBearing + (1 * cameraState.currentSpeed)) % 360;
+            
+            map.easeTo({
+                bearing: newBearing,
+                duration: 200,
+                essential: true
+            });
+        } catch (error) {
+            console.error("❌ Erreur dans startCameraRotation :", error);
+        }
+    }, 200);
+}
+
+function stopCameraRotation(cameraState) {
+    console.log("⏹️ Arrêt de la rotation");
+    cameraState.isRotating = false;
+    if (cameraState.rotationInterval) {
+        clearInterval(cameraState.rotationInterval);
+        cameraState.rotationInterval = null;
+    }
+    const rotationBtn = document.getElementById('rotationBtn');
+    if (rotationBtn) {
+        rotationBtn.classList.remove('active');
+        rotationBtn.style.backgroundColor = '';
+    }
+}
+
+// ===============================
+// CONTRÔLES CAMÉRA PRINCIPAUX
+// ===============================
+
+// Fonction pour obtenir la carte actuelle
+function getCurrentMap() {
+    if (AppState.currentPage === 'playeur' && AppState.mapPlayeur) {
+        return AppState.mapPlayeur;
+    } else if (AppState.currentPage === 'carte' && AppState.map) {
+        return AppState.map;
+    }
+    return null;
+}
+
+function showCameraFeedback(action, value) {
+    // Supprimer les anciens feedbacks
+    const oldFeedback = document.querySelector('.camera-feedback');
+    if (oldFeedback) {
+        oldFeedback.remove();
+    }
+    
+    const feedback = document.createElement('div');
+    feedback.className = 'camera-feedback';
+    feedback.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.85);
+        color: #0cff0b;
+        padding: 15px 25px;
+        border-radius: 25px;
+        font-size: 18px;
+        font-weight: bold;
+        z-index: 10000;
+        border: 2px solid #0cff0b;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        box-shadow: 0 5px 25px rgba(12, 255, 11, 0.3);
+        backdrop-filter: blur(10px);
+    `;
+    feedback.textContent = `${action}: ${value}`;
+    document.body.appendChild(feedback);
+    
+    // Animation d'apparition
+    setTimeout(() => feedback.style.opacity = '1', 10);
+    
+    // Disparaître après 1.5 secondes
+    setTimeout(() => {
+        feedback.style.opacity = '0';
+        setTimeout(() => {
+            if (feedback.parentNode) {
+                feedback.parentNode.removeChild(feedback);
+            }
+        }, 300);
+    }, 1500);
+}
+
+function setupCameraKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Ne fonctionne que sur les pages avec carte
+        if (AppState.currentPage !== 'playeur' && AppState.currentPage !== 'carte') return;
+        
+        const pitchUpBtn = document.getElementById('pitchUpBtn');
+        const pitchDownBtn = document.getElementById('pitchDownBtn');
+        const rotationBtn = document.getElementById('rotationBtn');
+        const speedBtn = document.getElementById('speedBtn');
+        
+        switch(e.key.toLowerCase()) {
+            case 'arrowup':
+            case 'u':
+                e.preventDefault();
+                if (pitchUpBtn) pitchUpBtn.click();
+                break;
+                
+            case 'arrowdown':
+            case 'd':
+                e.preventDefault();
+                if (pitchDownBtn) pitchDownBtn.click();
+                break;
+                
+            case 'r':
+                e.preventDefault();
+                if (rotationBtn) rotationBtn.click();
+                break;
+                
+            case 's':
+                e.preventDefault();
+                if (speedBtn) speedBtn.click();
+                break;
+        }
+    });
+}
+
+// ===============================
+// CONTRÔLES CAMÉRA RÉORGANISÉS
+// ===============================
+
+function setupCameraControls() {
+    console.log("🎥 Configuration des contrôles caméra...");
+    
+    const pitchCycleBtn = document.getElementById('pitchCycleBtn');
+    const rotationBtn = document.getElementById('rotationBtn');
+    const speedUpBtn = document.getElementById('speedUpBtn');
+    const slowDownBtn = document.getElementById('slowDownBtn');
+    
+    if (!pitchCycleBtn || !rotationBtn || !speedUpBtn || !slowDownBtn) {
+        console.warn("⚠️ Boutons caméra introuvables");
+        return;
+    }
+    
+    // État de la caméra (global pour pouvoir le réinitialiser)
+    window.cameraState = {
+        isRotating: false,
+        rotationInterval: null,
+        isPitchCycling: false,
+        pitchCycleInterval: null,
+        pitchDirection: -1,
+        currentSpeed: 0.5
+    };
+    
+    // === CYCLE MONTE/BAISSE ===
+    pitchCycleBtn.addEventListener('click', function() {
+        const map = getCurrentMap();
+        if (!map) {
+            console.warn("⚠️ Carte non disponible pour démarrer le cycle pitch");
+            showCameraFeedback("Erreur", "Carte non disponible");
+            return;	
+        }
+        
+        cameraState.isPitchCycling = !cameraState.isPitchCycling;
+        
+        if (cameraState.isPitchCycling) {
+            const currentPitch = map.getPitch();
+            // Déterminer la direction initiale intelligemment
+            if (currentPitch >= 75) {
+                 cameraState.pitchDirection = -1; // trop haut → descendre
+                } else if (currentPitch <= 35) {
+                     cameraState.pitchDirection = 1;  // trop bas → monter
+                            }
+            // Sinon garder la direction actuelle
+            
+            startPitchCycle(map, cameraState);
+            pitchCycleBtn.classList.add('active');
+            pitchCycleBtn.style.backgroundColor = 'rgba(76, 175, 80, 0.5)';
+            console.log("🔀 Cycle pitch activé");
+            showCameraFeedback("Cycle Monte/Baisse", "ACTIVÉ");
+        } else {
+            stopPitchCycle(cameraState);
+            pitchCycleBtn.classList.remove('active');
+            pitchCycleBtn.style.backgroundColor = '';
+            console.log("ℹ️ Cycle pitch désactivé");
+            showCameraFeedback("Cycle Monte/Baisse", "ARRÊTÉ");
+        }
+    });
+    
+    // === ROTATION AUTOMATIQUE ===
+    rotationBtn.addEventListener('click', function() {
+        const map = getCurrentMap();
+        if (!map) {
+            console.warn("⚠️ Carte non disponible pour démarrer la rotation");
+            showCameraFeedback("Erreur", "Carte non disponible");
+            return;
+        }
+        
+        cameraState.isRotating = !cameraState.isRotating;
+        
+        if (cameraState.isRotating) {
+            startCameraRotation(map, cameraState);
+            rotationBtn.classList.add('active');
+            rotationBtn.style.backgroundColor = 'rgba(76, 175, 80, 0.5)';
+            console.log("🔄 Rotation activée");
+            showCameraFeedback("Rotation", "ACTIVÉE");
+        } else {
+            stopCameraRotation(cameraState);
+            rotationBtn.classList.remove('active');
+            rotationBtn.style.backgroundColor = '';
+            console.log("⏹️ Rotation désactivée");
+            showCameraFeedback("Rotation", "ARRÊTÉE");
+        }
+    });
+    
+    // === ACCÉLÉRER ===
+    speedUpBtn.addEventListener('click', function() {
+        if (cameraState.currentSpeed < 2) {
+            cameraState.currentSpeed += 0.25;
+            console.log(`⏩ Vitesse augmentée: ${cameraState.currentSpeed}x`);
+            showCameraFeedback("Vitesse", cameraState.currentSpeed + "x");
+            
+            if (cameraState.isRotating) {
+                const map = getCurrentMap();
+                if (map) {
+                    stopCameraRotation(cameraState);
+                    startCameraRotation(map, cameraState);
+                }
+            }
+            if (cameraState.isPitchCycling) {
+                const map = getCurrentMap();
+                if (map) {
+                    stopPitchCycle(cameraState);
+                    startPitchCycle(map, cameraState);
+                }
+            }
+            
+            speedUpBtn.style.transform = 'scale(1.1)';
+            setTimeout(() => { speedUpBtn.style.transform = 'scale(1)'; }, 200);
+        } else {
+            showCameraFeedback("Vitesse Max", "2x");
+        }
+    });
+    
+    // === DÉCÉLÉRER ===
+    slowDownBtn.addEventListener('click', function() {
+        if (cameraState.currentSpeed > 0.25) {
+            cameraState.currentSpeed -= 0.25;
+            console.log(`⏪ Vitesse diminuée: ${cameraState.currentSpeed}x`);
+            showCameraFeedback("Vitesse", cameraState.currentSpeed + "x");
+            
+            if (cameraState.isRotating) {
+                const map = getCurrentMap();
+                if (map) {
+                    stopCameraRotation(cameraState);
+                    startCameraRotation(map, cameraState);
+                }
+            }
+            if (cameraState.isPitchCycling) {
+                const map = getCurrentMap();
+                if (map) {
+                    stopPitchCycle(cameraState);
+                    startPitchCycle(map, cameraState);
+                }
+            }
+            
+            slowDownBtn.style.transform = 'scale(1.1)';
+            setTimeout(() => { slowDownBtn.style.transform = 'scale(1)'; }, 200);
+        } else {
+            showCameraFeedback("Vitesse Min", "0.25x");
+        }
+    });
+    
+// Démarrer la configuration des écouteurs
+    setupMapInteractionListeners();
+    
+    console.log("✅ Contrôles caméra initialisés");
+}
+
 // Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', function() {
     console.log("🚀 Initialisation de l'application");
     initializeApp();
 });
+
 /**
  * Récupère les données de trace actuellement chargées
  * Convertit les coordonnées au format attendu par TraceConverter
@@ -138,16 +517,33 @@ function setupExportButtons() {
     
     console.log("✅ Boutons d'export initialisés");
 }
+
 function initializeApp() {
     console.log("=== INITIALISATION DE L'APPLICATION ===");
+    
+    // FORCE: Supprimer les anciens écouteurs
+    const oldPitchBtn = document.getElementById('pitchCycleBtn');
+    if (oldPitchBtn) {
+        const newPitchBtn = oldPitchBtn.cloneNode(true);
+        oldPitchBtn.parentNode.replaceChild(newPitchBtn, oldPitchBtn);
+        console.log("🔄 Bouton pitch cycle réinitialisé");
+    }
+    
+    // ... le reste de l'initialisation ...
     setupNavigation();
     initDropzones();
     setupPlayeurControls();
     setupZScaleControl();
-    setupExportButtons();  // ← AJOUTEZ CETTE LIGNE
-	setupVolToggle();  // ← AJOUTEZ CETTE LIGNE
-	setupMobileScaling();  // ← AJOUTEZ CETTE LIGNE
+    setupExportButtons();
+    setupVolToggle();
+    setupCameraControls();
+    setupCameraKeyboardShortcuts();
     showPage('accueil');
+    
+    setTimeout(() => {
+        showMessage("✅ Application initialisée avec succès !", "lime", 5000);
+    }, 1000);
+    
     console.log("✅ Application initialisée avec succès");
 }
 
@@ -236,7 +632,6 @@ function showPage(pageId) {
         }
         
         handlePageTransition(pageId);
-		
         
         console.log(`✅ Page ${pageId} affichée`);
     }
@@ -261,6 +656,7 @@ function setupVolToggle() {
     
     console.log("✅ volToggle configuré");
 }
+
 function handlePageTransition(pageId) {
     switch(pageId) {
         case 'carte':
@@ -308,6 +704,7 @@ function handlePageTransition(pageId) {
             break;
     }
 }
+
 // Fonction utilitaire pour animer la rotation
 function animatedFitBounds(map, bounds, options = {}) {
     const {
@@ -359,6 +756,7 @@ function animateBearing(map, startBearing, endBearing, duration, pitch) {
     
     requestAnimationFrame(frame);
 }
+
 // ===============================
 // CONTRÔLES DU PLAYEUR
 // ===============================
@@ -498,6 +896,7 @@ function initDropzones() {
 }
 
 function handleFile(file) {
+    clearTraces();
     console.log("=== 🚀 DÉBUT DU TRAITEMENT DU FICHIER ===");
     
     const ext = file.name.split('.').pop().toLowerCase();
@@ -517,7 +916,7 @@ function handleFile(file) {
     
     if (!AppState.mapInitialized) {
         initMap();
-		AppState.map.once('load', () => {
+        AppState.map.once('load', () => {
             processFile(file);
         });
     } else {
@@ -528,20 +927,13 @@ function handleFile(file) {
 // ===============================
 // CARTE PRINCIPALE (3D avec relief)
 // ===============================
-
 function initMap() {
     if (AppState.mapInitialized && AppState.map) {
         return;
     }
+
     console.log("🗺️ INITIALISATION DE LA CARTE");
     const MAPTILER_KEY = "zv0cJDROvQbyb5SevYhh";
-    const debugDiv = document.querySelector('.debug-info');
-
-    function showMessage(msg, color = '#0066cc') {
-        if (debugDiv) {
-            debugDiv.innerHTML = `<div style="color: ${color};">${msg}</div>`;
-        }
-    }
 
     if (typeof maplibregl === 'undefined') {
         showMessage("❌ MapLibre GL JS non chargé", 'red');
@@ -600,6 +992,7 @@ function initMap() {
         return;
     }
 }
+
 // ===============================
 // CARTE PLAYEUR
 // ===============================
@@ -684,7 +1077,8 @@ function initMapPlayeur() {
         console.error(`❌ Erreur création carte playeur: ${error.message}`);
         return;
     }
-}// ----------------------------------------------------------------
+}
+
 function displayTraceOnPlayeur(coordinates, fileName, fileType) {
     if (!AppState.mapPlayeur || !AppState.mapPlayeurInitialized) {
         console.warn("Carte playeur non initialisée");
@@ -745,46 +1139,45 @@ function displayTraceOnPlayeur(coordinates, fileName, fileType) {
                 'line-opacity': 0.9
             }
         });
-	
-  // --- Gestion du mode vol / sol ---
-const volToggle = document.getElementById("volToggle");
-if (volToggle && volToggle.checked) {
-    // Mode vol : trace respecte les altitudes
-    AppState.mapPlayeur.setTerrain(undefined); // Désactive le relief
+    
+        // --- Gestion du mode vol / sol ---
+        const volToggle = document.getElementById("volToggle");
+        if (volToggle && volToggle.checked) {
+            // Mode vol : trace respecte les altitudes
+            AppState.mapPlayeur.setTerrain(undefined); // Désactive le relief
 
-    // Appliquer les Z d'origine en conservant LineString 3D
-    const elevatedCoords = coordinates.map(coord => [coord[0], coord[1], coord[2] || 0]);
-    AppState.mapPlayeur.getSource("trace-playeur").setData({
-        type: "FeatureCollection",
-        features: [{
-            type: "Feature",
-            geometry: { type: "LineString", coordinates: elevatedCoords },
-            properties: { name: fileName }
-        }]
-    });
-    console.log("Mode VOL actif : la trace utilise la hauteur Z d'origine");
-} else {
-    // Mode sol : plaquée au terrain avec épaisseur/opacité existante
-    try {
-        AppState.mapPlayeur.setTerrain({
-            source: "dem-playeur",
-            exaggeration: parseFloat(document.getElementById("zScale")?.value || 1.5)
-        });
-        console.log("Mode SOL actif : trace plaquée sur le relief 3D");
-    } catch (error) {
-        console.warn("Erreur lors de la réactivation du terrain DEM :", error);
-    }
-}
-
-   // actualisation immédiate du vol 
-if (volToggle) {
-    volToggle.addEventListener("change", () => {
-        if (AppState.currentCoordinates) {
-            refreshPlayeurTrace();
+            // Appliquer les Z d'origine en conservant LineString 3D
+            const elevatedCoords = coordinates.map(coord => [coord[0], coord[1], coord[2] || 0]);
+            AppState.mapPlayeur.getSource("trace-playeur").setData({
+                type: "FeatureCollection",
+                features: [{
+                    type: "Feature",
+                    geometry: { type: "LineString", coordinates: elevatedCoords },
+                    properties: { name: fileName }
+                }]
+            });
+            console.log("Mode VOL actif : la trace utilise la hauteur Z d'origine");
+        } else {
+            // Mode sol : plaquée au terrain avec épaisseur/opacité existante
+            try {
+                AppState.mapPlayeur.setTerrain({
+                    source: "dem-playeur",
+                    exaggeration: parseFloat(document.getElementById("zScale")?.value || 1.5)
+                });
+                console.log("Mode SOL actif : trace plaquée sur le relief 3D");
+            } catch (error) {
+                console.warn("Erreur lors de la réactivation du terrain DEM :", error);
+            }
         }
-    });
-}
 
+        // actualisation immédiate du vol 
+        if (volToggle) {
+            volToggle.addEventListener("change", () => {
+                if (AppState.currentCoordinates) {
+                    refreshPlayeurTrace();
+                }
+            });
+        }
         
         // ===== AJOUT DU MARQUEUR DE DÉPART =====
         if (coordinates.length > 0) {
@@ -842,6 +1235,7 @@ if (volToggle) {
         console.error("❌ Erreur affichage trace playeur:", error);
     }
 }
+
 // ===============================
 // ANALYSE DES TRACES
 // ===============================
@@ -1029,343 +1423,10 @@ function displayAltitudeStats(stats, fileName) {
 // ===============================
 // TRAITEMENT DES FICHIERS
 // ===============================
-
 function processFile(file) {
     const debugDiv = document.querySelector('.debug-info');
+    showMessage(`📂 Traitement de ${file.name}...`, '#0066cc');
 
-function fallbackFitProcessing(arrayBuffer, file, ext) {
-    console.log("Utilisation de la méthode corrigée pour FIT");
-    showMessage("🔄 Analyse corrigée du fichier FIT...", 'orange');
-    
-    try {
-        const dataView = new DataView(arrayBuffer);
-        let coordinates = [];
-        
-        // CORRECTION : Bonne conversion semicircles -> degrees
-        function semicirclesToDegrees(semicircles) {
-            // Formule officielle Garmin
-            return semicircles * (180 / 2147483648); // 2^31
-        }
-        
-        // Analyser l'en-tête FIT
-        const headerSize = dataView.getUint8(0);
-        console.log(`📋 Header size: ${headerSize}`);
-        
-        let position = headerSize;
-        let recordCount = 0;
-        
-        // Parcourir le fichier à la recherche des records
-        while (position < arrayBuffer.byteLength - 12) {
-            try {
-                // Essayer d'extraire des paires lat/lon
-                const lat = dataView.getInt32(position, true);
-                const lon = dataView.getInt32(position + 4, true);
-                
-                // Appliquer la conversion CORRIGÉE
-                const latDeg = semicirclesToDegrees(lat);
-                const lonDeg = semicirclesToDegrees(lon);
-                
-                // Validation PLUS STRICTE
-                if (isValidFitCoordinate(latDeg, lonDeg)) {
-                    const alt = tryGetAltitude(dataView, position + 8);
-                    coordinates.push([lonDeg, latDeg, alt]);
-                    recordCount++;
-                    
-                    // Avancer de la taille d'un record typique
-                    position += 20;
-                } else {
-                    position += 1;
-                }
-                
-                // Limiter le nombre de points pour éviter la surcharge
-                if (recordCount > 1000) break;
-                
-            } catch (e) {
-                position += 1;
-            }
-        }
-        
-        console.log(`📍 ${coordinates.length} points bruts trouvés`);
-        
-        if (coordinates.length > 0) {
-            // CORRECTION : Meilleur filtrage géographique
-            const filteredCoords = filterAndSortCoordinates(coordinates);
-            
-            if (filteredCoords.length > 10) {
-                const geoJSON = {
-                    type: "FeatureCollection",
-                    features: [{
-                        type: "Feature",
-                        geometry: { type: "LineString", coordinates: filteredCoords },
-                        properties: { name: file.name }
-                    }]
-                };
-                
-                showMessage(`✅ FIT chargé: ${filteredCoords.length} points (France)`, 'green');
-                finalizeTraceProcessing(geoJSON, filteredCoords, file, ext);
-            } else {
-                // Essayer une autre méthode de conversion
-                const alternativeCoords = tryAlternativeConversion(arrayBuffer);
-                if (alternativeCoords.length > 10) {
-                    const geoJSON = {
-                        type: "FeatureCollection",
-                        features: [{
-                            type: "Feature", 
-                            geometry: { type: "LineString", coordinates: alternativeCoords },
-                            properties: { name: file.name }
-                        }]
-                    };
-                    showMessage(`✅ FIT chargé (méthode alt.): ${alternativeCoords.length} points`, 'green');
-                    finalizeTraceProcessing(geoJSON, alternativeCoords, file, ext);
-                } else {
-                    showMessage("❌ Trace trop courte ou hors zone", 'red');
-                    debugCoordinates(coordinates); // Pour debug
-                }
-            }
-        } else {
-            showMessage("❌ Aucune coordonnée valide trouvée", 'red');
-        }
-        
-    } catch (error) {
-        console.error("Erreur méthode FIT:", error);
-        showMessage("❌ Erreur traitement FIT", 'red');
-    }
-}
-
-// CORRECTION : Validation spécifique France/Europe
-function isValidFitCoordinate(lat, lon) {
-    // Coordonnées plausibles pour la France/Europe
-    const isInFrance = lat >= 41.0 && lat <= 51.5 && lon >= -5.0 && lon <= 9.5;
-    
-    return !isNaN(lat) && !isNaN(lon) && 
-           Math.abs(lat) <= 90 && Math.abs(lon) <= 180 &&
-           lat !== 0 && lon !== 0 &&
-           isInFrance; // FILTRE FRANCE SEULEMENT
-}
-
-function tryAlternativeConversion(arrayBuffer) {
-    console.log("🔄 Essai méthode alternative de conversion...");
-    const dataView = new DataView(arrayBuffer);
-    const coordinates = [];
-    
-    // Essayer avec un facteur de conversion différent
-    function alternativeConversion(semicircles) {
-        return semicircles * (180 / 2147483648); // Même formule mais essayons d'autres approches
-    }
-    
-    // Essayer en big endian
-    for (let i = 0; i < arrayBuffer.byteLength - 8; i += 4) {
-        try {
-            const lat = dataView.getInt32(i, false); // Big endian
-            const lon = dataView.getInt32(i + 4, false);
-            
-            const latDeg = alternativeConversion(lat);
-            const lonDeg = alternativeConversion(lon);
-            
-            if (isValidFitCoordinate(latDeg, lonDeg)) {
-                coordinates.push([lonDeg, latDeg, 0]);
-            }
-        } catch (e) {
-            // Continuer
-        }
-    }
-    
-    return coordinates;
-}
-
-// CORRECTION : Filtrage et tri intelligent
-function filterAndSortCoordinates(coordinates) {
-    if (coordinates.length === 0) return [];
-    
-    // Calculer le centre de masse
-    const avgLon = coordinates.reduce((sum, coord) => sum + coord[0], 0) / coordinates.length;
-    const avgLat = coordinates.reduce((sum, coord) => sum + coord[1], 0) / coordinates.length;
-    
-    console.log(`🎯 Centre approximatif: ${avgLat.toFixed(4)}, ${avgLon.toFixed(4)}`);
-    
-    // Filtrer les points proches du centre
-    const filtered = coordinates.filter(coord => {
-        const distLon = Math.abs(coord[0] - avgLon);
-        const distLat = Math.abs(coord[1] - avgLat);
-        return distLon < 2.0 && distLat < 2.0; // Dans un rayon de 2 degrés
-    });
-    
-    // Trier par timestamp implicite (ordre dans le fichier)
-    console.log(`📊 Après filtrage: ${filtered.length} points`);
-    
-    return filtered;
-}
-
-function tryGetAltitude(dataView, position) {
-    try {
-        // Essayer différents formats d'altitude
-        const alt1 = dataView.getUint16(position, true);
-        const alt2 = dataView.getInt16(position, true);
-        
-        if (alt1 > 0 && alt1 < 5000) return alt1;
-        if (alt2 > 0 && alt2 < 5000) return alt2;
-        
-        return 0;
-    } catch (e) {
-        return 0;
-    }
-}
-
-// Fonction de debug
-function debugCoordinates(coordinates) {
-    console.log("🐛 Debug des coordonnées extraites:");
-    coordinates.slice(0, 10).forEach((coord, i) => {
-        console.log(`Point ${i}: ${coord[1].toFixed(6)}, ${coord[0].toFixed(6)}`);
-    });
-    
-    // Statistiques
-    const lats = coordinates.map(c => c[1]);
-    const lons = coordinates.map(c => c[0]);
-    console.log(`📈 Latitudes: ${Math.min(...lats).toFixed(2)} à ${Math.max(...lats).toFixed(2)}`);
-    console.log(`📈 Longitudes: ${Math.min(...lons).toFixed(2)} à ${Math.max(...lons).toFixed(2)}`);
-}
-function isValidCoordinate(lat, lon) {
-    return !isNaN(lat) && !isNaN(lon) && 
-           Math.abs(lat) <= 90 && Math.abs(lon) <= 180 &&
-           lat !== 0 && lon !== 0; // Exclure les coordonnées nulles
-}
-
-function advancedFitSearch(arrayBuffer) {
-    console.log("🔍 Recherche avancée dans le fichier FIT...");
-    const dataView = new DataView(arrayBuffer);
-    const coordinates = [];
-    const foundPoints = new Set(); // Pour éviter les doublons
-    
-    // Chercher des patterns de coordonnées plausibles
-    for (let i = 0; i < arrayBuffer.byteLength - 8; i += 4) {
-        try {
-            // Essayer différentes interprétations des données
-            const lat1 = dataView.getInt32(i, true);
-            const lon1 = dataView.getInt32(i + 4, true);
-            
-            const latDeg1 = lat1 * (180 / Math.pow(2, 31));
-            const lonDeg1 = lon1 * (180 / Math.pow(2, 31));
-            
-            if (isValidCoordinate(latDeg1, lonDeg1)) {
-                const key = `${latDeg1.toFixed(6)},${lonDeg1.toFixed(6)}`;
-                if (!foundPoints.has(key)) {
-                    foundPoints.add(key);
-                    coordinates.push([lonDeg1, latDeg1, 0]);
-                }
-            }
-            
-            // Essayer en big endian aussi
-            const lat2 = dataView.getInt32(i, false);
-            const lon2 = dataView.getInt32(i + 4, false);
-            
-            const latDeg2 = lat2 * (180 / Math.pow(2, 31));
-            const lonDeg2 = lon2 * (180 / Math.pow(2, 31));
-            
-            if (isValidCoordinate(latDeg2, lonDeg2)) {
-                const key = `${latDeg2.toFixed(6)},${lonDeg2.toFixed(6)}`;
-                if (!foundPoints.has(key)) {
-                    foundPoints.add(key);
-                    coordinates.push([lonDeg2, latDeg2, 0]);
-                }
-            }
-            
-        } catch (e) {
-            // Continuer en cas d'erreur
-        }
-    }
-    
-    return coordinates;
-}
-
-function filterValidTrack(coordinates) {
-    if (coordinates.length === 0) return [];
-    
-    // Trier par longitude pour avoir un ordre cohérent
-    coordinates.sort((a, b) => a[0] - b[0]);
-    
-    // Regrouper les points qui sont géographiquement proches
-    const clusters = [];
-    let currentCluster = [coordinates[0]];
-    
-    for (let i = 1; i < coordinates.length; i++) {
-        const lastPoint = currentCluster[currentCluster.length - 1];
-        const currentPoint = coordinates[i];
-        
-        // Calculer la distance approximative
-        const latDiff = Math.abs(lastPoint[1] - currentPoint[1]);
-        const lonDiff = Math.abs(lastPoint[0] - currentPoint[0]);
-        const distance = Math.sqrt(latDiff * latDiff + lonDiff * lonDiff);
-        
-        if (distance < 1.0) { // Points à moins de 1 degré
-            currentCluster.push(currentPoint);
-        } else {
-            if (currentCluster.length > 5) { // Cluster valide s'il a au moins 5 points
-                clusters.push(currentCluster);
-            }
-            currentCluster = [currentPoint];
-        }
-    }
-    
-    // Prendre le plus grand cluster
-    if (clusters.length > 0) {
-        clusters.sort((a, b) => b.length - a.length);
-        console.log(`📊 Meilleure trace: ${clusters[0].length} points`);
-        return clusters[0];
-    }
-    
-    // Sinon retourner les coordonnées originales
-    return coordinates;
-}
-function processFitData(data, file, ext) {
-    console.log("Traitement des données FIT...");
-    let coordinates = [];
-    
-    // Fonction de conversion
-    function semicirclesToDegrees(semicircles) {
-        return semicircles * (180 / Math.pow(2, 31));
-    }
-    
-    // Extraction depuis records
-    if (data.records && data.records.length > 0) {
-        data.records.forEach(record => {
-            if (record.position_lat !== undefined && record.position_long !== undefined) {
-                const lat = semicirclesToDegrees(record.position_lat);
-                const lon = semicirclesToDegrees(record.position_long);
-                const alt = record.altitude || record.enhanced_altitude || 0;
-                
-                if (Math.abs(lat) <= 90 && Math.abs(lon) <= 180) {
-                    coordinates.push([lon, lat, alt]);
-                }
-            }
-        });
-    }
-    
-    if (coordinates.length === 0) {
-        showMessage("❌ Aucune coordonnée trouvée dans le fichier FIT", 'red');
-        return;
-    }
-    
-    const geoJSON = {
-        type: "FeatureCollection",
-        features: [{
-            type: "Feature", 
-            geometry: { type: "LineString", coordinates },
-            properties: { name: file.name }
-        }]
-    };
-    
-    finalizeTraceProcessing(geoJSON, coordinates, file, ext);
-}
-    
-    function showMessage(msg, color = 'black') {
-        console.log(msg);
-        if (debugDiv) {
-            debugDiv.innerHTML = `<div style="color: ${color};">${msg}</div>`;
-        }
-    }
-    
-    showMessage(`Traitement de ${file.name}...`, '#0066cc');
-    
     const reader = new FileReader();
 
     reader.onload = function(event) {
@@ -1390,18 +1451,14 @@ function processFitData(data, file, ext) {
                 console.log("Traitement IGC...");
                 const lines = event.target.result.split('\n');
                 coordinates = [];
-                
+
                 lines.forEach((line, index) => {
                     const parsed = parseIGCLine(line, index);
-                    if (parsed) {
-                        coordinates.push([parsed.longitude, parsed.latitude, parsed.altitude]);
-                    }
+                    if (parsed) coordinates.push([parsed.longitude, parsed.latitude, parsed.altitude]);
                 });
-                
-                if (coordinates.length === 0) {
-                    throw new Error("Aucun point valide trouvé dans le fichier IGC");
-                }
-                
+
+                if (coordinates.length === 0) throw new Error("Aucun point valide trouvé dans le fichier IGC");
+
                 geoJSON = {
                     type: "FeatureCollection",
                     features: [{
@@ -1415,15 +1472,17 @@ function processFitData(data, file, ext) {
                 console.log("Traitement TCX...");
                 const xml = new DOMParser().parseFromString(event.target.result, "text/xml");
                 const points = xml.getElementsByTagNameNS("*", "Trackpoint");
-
                 coordinates = [];
+
                 for (let i = 0; i < points.length; i++) {
                     const lat = parseFloat(points[i].getElementsByTagName("LatitudeDegrees")[0]?.textContent);
                     const lon = parseFloat(points[i].getElementsByTagName("LongitudeDegrees")[0]?.textContent);
                     const alt = parseFloat(points[i].getElementsByTagName("AltitudeMeters")[0]?.textContent) || 0;
                     if (!isNaN(lat) && !isNaN(lon)) coordinates.push([lon, lat, alt]);
                 }
+
                 if (coordinates.length === 0) throw new Error("Aucun point valide trouvé dans le TCX");
+
                 geoJSON = {
                     type: "FeatureCollection",
                     features: [{
@@ -1433,55 +1492,47 @@ function processFitData(data, file, ext) {
                     }]
                 };
 
-  } else if (ext === "fit") {
-    console.log("Traitement FIT...");
-    showMessage("⏳ Analyse du fichier FIT en cours (méthode alternative)...", '#0066cc');
-    
-    // Méthode alternative sans dépendance externe
-    if (event.target.result instanceof ArrayBuffer) {
-        try {
-            // Essayer d'utiliser la bibliothèque si disponible
-            if (typeof FitParser !== 'undefined') {
-                const fitParser = new FitParser({
-                    force: true,
-                    speedUnit: 'km/h', 
-                    lengthUnit: 'm',
-                    elapsedRecordField: true
-                });
+            } else if (ext === "fit") {
+                console.log("Traitement FIT...");
+                showMessage("⏳ Analyse du fichier FIT en cours...", '#0066cc');
 
-                fitParser.parse(event.target.result, (error, data) => {
-                    if (error) {
+                if (event.target.result instanceof ArrayBuffer) {
+                    try {
+                        if (typeof FitParser !== 'undefined') {
+                            const fitParser = new FitParser({
+                                force: true,
+                                speedUnit: 'km/h',
+                                lengthUnit: 'm',
+                                elapsedRecordField: true
+                            });
+
+                            fitParser.parse(event.target.result, (error, data) => {
+                                if (error) {
+                                    console.error("Erreur FIT parser:", error);
+                                    fallbackFitProcessing(event.target.result, file, ext);
+                                    return;
+                                }
+                                processFitData(data, file, ext);
+                            });
+                        } else {
+                            fallbackFitProcessing(event.target.result, file, ext);
+                        }
+                    } catch (error) {
                         console.error("Erreur FIT parser:", error);
                         fallbackFitProcessing(event.target.result, file, ext);
-                        return;
                     }
-                    processFitData(data, file, ext);
-                });
+                } else {
+                    showMessage("❌ Format de fichier FIT non supporté", 'red');
+                }
+                return;
             } else {
-                fallbackFitProcessing(event.target.result, file, ext);
-            }
-        } catch (error) {
-            console.error("Erreur avec FIT parser:", error);
-            fallbackFitProcessing(event.target.result, file, ext);
-        }
-    } else {
-        showMessage("❌ Format de fichier FIT non supporté", 'red');
-    }
-    return;
-} else {
                 throw new Error(`Format ${ext} non supporté. Utilisez GPX, KML, IGC, TCX ou FIT.`);
             }
 
-            // Pour tous les formats SAUF FIT (qui est asynchrone)
-            if (ext !== 'igc' && ext !== 'fit' && ext !== 'tcx') {
+            if (ext !== 'fit') {
                 coordinates = extractCoordinatesFromGeoJSON(geoJSON);
-                if (coordinates.length === 0) {
-                    throw new Error("Aucune coordonnée valide trouvée dans le fichier");
-                }
+                if (coordinates.length === 0) throw new Error("Aucune coordonnée valide trouvée dans le fichier");
             }
-
-            console.log("GeoJSON généré:", geoJSON);
-            console.log(`Coordonnées extraites: ${coordinates.length} points`);
 
             finalizeTraceProcessing(geoJSON, coordinates, file, ext);
 
@@ -1495,7 +1546,6 @@ function processFitData(data, file, ext) {
         showMessage(`❌ Erreur de lecture du fichier ${file.name}`, 'red');
     };
 
-    // Lecture selon le type de fichier
     if (file.name.toLowerCase().endsWith('.fit')) {
         console.log("📖 Lecture FIT en ArrayBuffer");
         reader.readAsArrayBuffer(file);
@@ -1504,6 +1554,7 @@ function processFitData(data, file, ext) {
         reader.readAsText(file);
     }
 }
+
 function extractCoordinatesFromGeoJSON(geoJSON) {
     const coordinates = [];
     
@@ -1554,6 +1605,14 @@ function finalizeTraceProcessing(geoJSON, coordinates, file, ext) {
     }
     
     console.log("✅ Traitement finalisé avec succès");
+    const debugDiv = document.querySelector('.debug-info');
+    if (debugDiv) {
+        debugDiv.innerHTML = `
+            <div style="color: lime; font-weight: bold;">
+                ✅ Trace chargée : ${file.name}
+            </div>
+        `;
+    }
 }
 
 function displayTraceOnMap(coordinates, fileName, fileType, isFlight) {
@@ -1646,59 +1705,142 @@ function displayTraceOnMap(coordinates, fileName, fileType, isFlight) {
     }
 }
 
-function showMessage(msg, color = 'black') {
-    console.log(msg);
-    const debugDiv = document.querySelector('.debug-info');
-    if (debugDiv) {
-        debugDiv.innerHTML = `<div style="color: ${color};">${msg}</div>`;
-    }
+// ===============================
+// AFFICHAGE TEMPORISÉ DES MESSAGES DANS debug-info
+// ===============================
+
+function showMessage(msg, color = 'red', duration = 5000) {
+    console.log("📢:", msg);
+    
+    // Créer un message positionné plus bas
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = `
+        position: fixed;
+        bottom: 120px;  /* ← */
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.55);  /* ← PLUS TRANSPARENT */
+        color: ${color};
+        padding: 20px 30px;
+        border-radius: 50px;  /* ← COINS ARRONDIS */
+        z-index: 99999;
+        font-size: 18px;
+        font-weight: bold;
+        border: 2px solid ${color};
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+        text-align: center;
+        min-width: 280px;
+        max-width: 80%;
+        backdrop-filter: blur(15px);  /* ← EFFET FLOU */
+        font-family: Arial, sans-serif;
+        opacity: 0;
+        transition: all 0.4s ease;
+    `;
+    messageDiv.innerHTML = `
+        <div>${msg}</div>
+        <div style="font-size: 11px; margin-top: 8px; opacity: 0.6;">
+            (fermeture dans ${duration/1000}s)
+        </div>
+    `;
+    
+    // Supprimer les anciens messages
+    const oldMessages = document.querySelectorAll('[id^="debug-message"]');
+    oldMessages.forEach(msg => msg.remove());
+    
+    messageDiv.id = 'debug-message-' + Date.now();
+    document.body.appendChild(messageDiv);
+    
+    // Animation d'entrée
+    setTimeout(() => {
+        messageDiv.style.opacity = '1';
+        messageDiv.style.transform = 'translateX(-50%) translateY(0)';
+    }, 10);
+    
+    // Supprimer après la durée
+    setTimeout(() => {
+        messageDiv.style.opacity = '0';
+        messageDiv.style.transform = 'translateX(-50%) translateY(-20px)';
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.parentNode.removeChild(messageDiv);
+            }
+        }, 400);
+    }, duration);
 }
 
 // ===============================
 // NETTOYAGE
 // ===============================
+
 function clearTraces() {
-    console.log("🧹 Nettoyage des traces...");
-    
-    // Supprimer le marqueur de départ
+    console.log("🧹 Nettoyage complet des traces et états...");
+
+    // 🛑 Arrêter toute animation en cours
+    if (window.simpleAnimationPlayer && window.simpleAnimationPlayer.animationInterval) {
+        clearInterval(window.simpleAnimationPlayer.animationInterval);
+        window.simpleAnimationPlayer.animationInterval = null;
+        console.log("⏹️ Animation stoppée");
+    }
+
+    // 🔄 RÉINITIALISER LE CYCLE PITCH (AJOUT CRITIQUE)
+    if (window.cameraState) {
+        resetPitchCycle(window.cameraState);
+        console.log("🔄 Cycle pitch réinitialisé");
+    }
+
+
+    // 🔊 Retirer l'écouteur du volToggle pour éviter les doublons
+    const volToggle = document.getElementById("volToggle");
+    if (volToggle) {
+        const newToggle = volToggle.cloneNode(true);
+        volToggle.parentNode.replaceChild(newToggle, volToggle);
+        console.log("♻️ volToggle réinitialisé");
+    }
+
+    // 🧭 Supprimer le marqueur de départ
     if (AppState.startMarker) {
         AppState.startMarker.remove();
         AppState.startMarker = null;
     }
-    
+
+    // 🗺️ Nettoyer la carte principale
     if (AppState.map && AppState.map.getSource) {
-        try {
-            if (AppState.map.getSource('trace')) {
-                AppState.map.removeLayer('trace-layer');
-                AppState.map.removeSource('trace');
-            }
-        } catch (e) {
-            console.warn("Erreur nettoyage:", e);
-        }
+        ["trace", "trace-layer"].forEach(id => {
+            try {
+                if (AppState.map.getLayer(id)) AppState.map.removeLayer(id);
+                if (AppState.map.getSource(id)) AppState.map.removeSource(id);
+            } catch (e) { console.warn("⚠️ Erreur nettoyage carte:", e); }
+        });
     }
-    
+
+    // 🎮 Nettoyer la carte playeur
     if (AppState.mapPlayeur && AppState.mapPlayeur.getSource) {
-        try {
-            if (AppState.mapPlayeur.getSource('trace-playeur')) {
-                AppState.mapPlayeur.removeLayer('trace-playeur');
-                AppState.mapPlayeur.removeSource('trace-playeur');
-            }
-        } catch (e) {
-            console.warn("Erreur nettoyage playeur:", e);
-        }
+        ["trace-playeur", "trace-playeur-layer"].forEach(id => {
+            try {
+                if (AppState.mapPlayeur.getLayer(id)) AppState.mapPlayeur.removeLayer(id);
+                if (AppState.mapPlayeur.getSource(id)) AppState.mapPlayeur.removeSource(id);
+            } catch (e) { console.warn("⚠️ Erreur nettoyage playeur:", e); }
+        });
     }
-    
-    AppState.currentTrace = null;
-    AppState.currentCoordinates = null;
-    AppState.currentFileName = null;
-    AppState.currentFileType = null;
+
+    // 🔄 Réinitialiser l'état global
+    Object.assign(AppState, {
+        currentTrace: null,
+        currentCoordinates: null,
+        currentFileName: null,
+        currentFileType: null
+    });
     currentRawContent = "";
-    
+
+    // 🧽 Nettoyer la zone debug
     const debugDiv = document.querySelector('.debug-info');
     if (debugDiv) {
-        debugDiv.innerHTML = "✅ Système nettoyé - Prêt pour un nouveau chargement...";
+        debugDiv.innerHTML = "✅ Système nettoyé - prêt pour un nouveau chargement.";
     }
-}// ===============================
+
+    console.log("✅ Nettoyage terminé");
+}
+
 // CHANGEMENT DE STYLE DE CARTE
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
@@ -1728,6 +1870,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
 // ===============================
 // GESTION DU CHOIX DU FOND DE CARTE
 // ===============================
@@ -1762,188 +1905,174 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function updateAllMapsStyle(styleKey) {
-  const newStyle = mapStyles[styleKey];
-  if (!newStyle) return;
+    const newStyle = mapStyles[styleKey];
+    if (!newStyle) return;
 
-  console.log(`🎨 Application du fond : ${styleKey}`);
+    console.log(`🎨 Application du fond : ${styleKey}`);
 
-  const applyToMap = (map, config = {}) => {
-    const {
-      traceSourceId = "trace",
-      traceLayerId = "trace",
-      demSourceId = "dem",
-   /*   skyLayerId = "sky",*/
-      isPlayeur = false
-    } = config;
+    const applyToMap = (map, config = {}) => {
+        const {
+            traceSourceId = "trace",
+            traceLayerId = "trace",
+            demSourceId = "dem",
+            isPlayeur = false
+        } = config;
 
-    if (!map || !map.isStyleLoaded()) return;
+        if (!map || !map.isStyleLoaded()) return;
 
-    try {
-      // 📦 SAUVEGARDE DE L'ÉTAT ACTUEL
-      const existingTraceData = map.getSource(traceSourceId)?.serialize?.().data || null;
-      
-      // Sauvegarder les propriétés de style de la trace
-      let traceColor = "#ff0000";
-      let traceWidth = 4;
-      let traceOpacity = 0.9;
-      
-      if (map.getLayer(traceLayerId)) {
-        traceColor = map.getPaintProperty(traceLayerId, 'line-color') || traceColor;
-        traceWidth = map.getPaintProperty(traceLayerId, 'line-width') || traceWidth;
-        traceOpacity = map.getPaintProperty(traceLayerId, 'line-opacity') || traceOpacity;
-      }
-      
-      // Récupérer l'échelle Z actuelle (spécifique à chaque carte)
-      const currentZScale = isPlayeur 
-        ? parseFloat(document.getElementById('zScale')?.value || 1.5)
-        : 1.5;
-      
-      // Sauvegarder la position de la caméra
-      const camera = {
-        center: map.getCenter(),
-        zoom: map.getZoom(),
-        bearing: map.getBearing(),
-        pitch: map.getPitch()
-      };
-
-      console.log(`💾 Sauvegarde état ${isPlayeur ? 'playeur' : 'carte'} - Z:${currentZScale}`);
-
-      // 🔄 CHANGEMENT DE STYLE
-      map.setStyle(newStyle);
-
-      // 🎯 RÉAPPLICATION APRÈS CHARGEMENT
-      map.once("styledata", () => {
-        console.log(`📥 Style chargé pour ${isPlayeur ? 'playeur' : 'carte'}`);
-        
         try {
-          // 1️⃣ RESTAURER LA POSITION DE LA CAMÉRA
-          map.jumpTo({
-            center: camera.center,
-            zoom: camera.zoom,
-            bearing: camera.bearing,
-            pitch: camera.pitch
-          });
-
-          // 2️⃣ RÉAPPLIQUER LE TERRAIN DEM (CRITIQUE!)
-          if (!map.getSource(demSourceId)) {
-            map.addSource(demSourceId, {
-              type: "raster-dem",
-              url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${MAPTILER_KEY}`
-            });
-          }
-          
-          // Appliquer le terrain avec la bonne exagération
-          map.setTerrain({ 
-            source: demSourceId, 
-            exaggeration: currentZScale
-          });
-          
-          console.log(`✅ Terrain 3D réappliqué (Z=${currentZScale})`);
-
-          // 3️⃣ AJOUTER LA COUCHE SKY
-    /*      if (!map.getLayer(skyLayerId)) {
-            map.addLayer({
-              id: skyLayerId,
-              type: "sky",
-              paint: {
-                "sky-type": "atmosphere",
-                "sky-atmosphere-sun": [0.0, 90.0],
-                "sky-atmosphere-sun-intensity": 15
-              }
-            });
-          }
-  */
-          // 4️⃣ RÉAFFICHER LA TRACE SI ELLE EXISTE
-          if (existingTraceData) {
-            // Nettoyer l'ancienne trace si elle existe
+            // 📦 SAUVEGARDE DE L'ÉTAT ACTUEL
+            const existingTraceData = map.getSource(traceSourceId)?.serialize?.().data || null;
+            
+            // Sauvegarder les propriétés de style de la trace
+            let traceColor = "#ff0000";
+            let traceWidth = 4;
+            let traceOpacity = 0.9;
+            
             if (map.getLayer(traceLayerId)) {
-              map.removeLayer(traceLayerId);
+                traceColor = map.getPaintProperty(traceLayerId, 'line-color') || traceColor;
+                traceWidth = map.getPaintProperty(traceLayerId, 'line-width') || traceWidth;
+                traceOpacity = map.getPaintProperty(traceLayerId, 'line-opacity') || traceOpacity;
             }
-            if (map.getSource(traceSourceId)) {
-              map.removeSource(traceSourceId);
-            }
+            
+            // Récupérer l'échelle Z actuelle (spécifique à chaque carte)
+            const currentZScale = isPlayeur 
+                ? parseFloat(document.getElementById('zScale')?.value || 1.5)
+                : 1.5;
+            
+            // Sauvegarder la position de la caméra
+            const camera = {
+                center: map.getCenter(),
+                zoom: map.getZoom(),
+                bearing: map.getBearing(),
+                pitch: map.getPitch()
+            };
 
-            // Ajouter la source
-            map.addSource(traceSourceId, {
-              type: "geojson",
-              data: existingTraceData,
+            console.log(`💾 Sauvegarde état ${isPlayeur ? 'playeur' : 'carte'} - Z:${currentZScale}`);
+
+            // 🔄 CHANGEMENT DE STYLE
+            map.setStyle(newStyle);
+
+            // 🎯 RÉAPPLICATION APRÈS CHARGEMENT
+            map.once("styledata", () => {
+                console.log(`📥 Style chargé pour ${isPlayeur ? 'playeur' : 'carte'}`);
+                
+                try {
+                    // 1️⃣ RESTAURER LA POSITION DE LA CAMÉRA
+                    map.jumpTo({
+                        center: camera.center,
+                        zoom: camera.zoom,
+                        bearing: camera.bearing,
+                        pitch: camera.pitch
+                    });
+
+                    // 2️⃣ RÉAPPLIQUER LE TERRAIN DEM (CRITIQUE!)
+                    if (!map.getSource(demSourceId)) {
+                        map.addSource(demSourceId, {
+                            type: "raster-dem",
+                            url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${MAPTILER_KEY}`
+                        });
+                    }
+                    
+                    // Appliquer le terrain avec la bonne exagération
+                    map.setTerrain({ 
+                        source: demSourceId, 
+                        exaggeration: currentZScale
+                    });
+                    
+                    console.log(`✅ Terrain 3D réappliqué (Z=${currentZScale})`);
+
+                    // 3️⃣ RÉAFFICHER LA TRACE SI ELLE EXISTE
+                    if (existingTraceData) {
+                        // Nettoyer l'ancienne trace si elle existe
+                        if (map.getLayer(traceLayerId)) {
+                            map.removeLayer(traceLayerId);
+                        }
+                        if (map.getSource(traceSourceId)) {
+                            map.removeSource(traceSourceId);
+                        }
+
+                        // Ajouter la source
+                        map.addSource(traceSourceId, {
+                            type: "geojson",
+                            data: existingTraceData,
+                        });
+
+                        // Ajouter la couche avec les propriétés sauvegardées
+                        map.addLayer({
+                            id: traceLayerId,
+                            type: "line",
+                            source: traceSourceId,
+                            layout: {
+                                'line-join': 'round',
+                                'line-cap': 'round'
+                            },
+                            paint: {
+                                "line-color": traceColor,
+                                "line-width": traceWidth,
+                                "line-opacity": traceOpacity,
+                            },
+                        });
+
+                        console.log(`✅ Trace réaffichée (couleur: ${traceColor}, largeur: ${traceWidth})`);
+                    }
+
+                    // 5️⃣ AJOUTER LES CONTRÔLES DE NAVIGATION (si pas déjà présents)
+                    if (!map._controls || map._controls.length === 0) {
+                        map.addControl(new maplibregl.NavigationControl());
+                    }
+
+                } catch (err) {
+                    console.error(`❌ Erreur réapplication ${isPlayeur ? 'playeur' : 'carte'}:`, err);
+                }
             });
 
-            // Ajouter la couche avec les propriétés sauvegardées
-            map.addLayer({
-              id: traceLayerId,
-              type: "line",
-              source: traceSourceId,
-              layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-              },
-              paint: {
-                "line-color": traceColor,
-                "line-width": traceWidth,
-                "line-opacity": traceOpacity,
-              },
-            });
-
-            console.log(`✅ Trace réaffichée (couleur: ${traceColor}, largeur: ${traceWidth})`);
-          }
-
-          // 5️⃣ AJOUTER LES CONTRÔLES DE NAVIGATION (si pas déjà présents)
-          if (!map._controls || map._controls.length === 0) {
-            map.addControl(new maplibregl.NavigationControl());
-          }
-
-        } catch (err) {
-          console.error(`❌ Erreur réapplication ${isPlayeur ? 'playeur' : 'carte'}:`, err);
+        } catch (e) {
+            console.error(`❌ Erreur changement style ${isPlayeur ? 'playeur' : 'carte'}:`, e);
         }
-      });
+    };
 
-    } catch (e) {
-      console.error(`❌ Erreur changement style ${isPlayeur ? 'playeur' : 'carte'}:`, e);
+    // 🗺️ APPLIQUER AUX DEUX CARTES AVEC CONFIGS SPÉCIFIQUES
+    if (AppState.map) {
+        applyToMap(AppState.map, {
+            traceSourceId: "trace",
+            traceLayerId: "trace-layer",
+            demSourceId: "dem",
+            isPlayeur: false
+        });
     }
-  };
 
-  // 🗺️ APPLIQUER AUX DEUX CARTES AVEC CONFIGS SPÉCIFIQUES
-  if (AppState.map) {
-    applyToMap(AppState.map, {
-      traceSourceId: "trace",
-      traceLayerId: "trace-layer",
-      demSourceId: "dem",
-    /*  skyLayerId: "sky",*/
-      isPlayeur: false
-    });
-  }
+    if (AppState.mapPlayeur) {
+        applyToMap(AppState.mapPlayeur, {
+            traceSourceId: "trace-playeur",
+            traceLayerId: "trace-playeur",
+            demSourceId: "dem-playeur",
+            isPlayeur: true
+        });
+    }
 
-  if (AppState.mapPlayeur) {
-    applyToMap(AppState.mapPlayeur, {
-      traceSourceId: "trace-playeur",
-      traceLayerId: "trace-playeur",
-      demSourceId: "dem-playeur",
-   /*   skyLayerId: "sky-playeur", */
-      isPlayeur: true
-    });
-  }
-
-  // Mémoriser le style courant
-  AppState.currentMapStyle = styleKey;
-  
-  console.log(`🎉 Changement de fond terminé : ${styleKey}`);
+    // Mémoriser le style courant
+    AppState.currentMapStyle = styleKey;
+    
+    console.log(`🎉 Changement de fond terminé : ${styleKey}`);
 }
+
 // Script pour gérer la sélection du moyen de mobilité
 document.addEventListener('DOMContentLoaded', function() {
-  const mobileSelector = document.getElementById('mobileSelector');
-  const mobileIconValue = document.getElementById('mobileIconValue');
-  
-  // Mise à jour quand la sélection change
-  mobileSelector.addEventListener('change', function() {
-    const selectedIcon = this.value;
-    mobileIconValue.textContent = selectedIcon;
-    console.log("Moyen de mobilité sélectionné:", selectedIcon);
+    const mobileSelector = document.getElementById('mobileSelector');
+    const mobileIconValue = document.getElementById('mobileIconValue');
     
-    // Ici vous pouvez ajouter la logique pour mettre à jour la visualisation
-    // en fonction du moyen de mobilité sélectionné
-  });
+    // Mise à jour quand la sélection change
+    mobileSelector.addEventListener('change', function() {
+        const selectedIcon = this.value;
+        mobileIconValue.textContent = selectedIcon;
+        console.log("Moyen de mobilité sélectionné:", selectedIcon);
+        
+        // Ici vous pouvez ajouter la logique pour mettre à jour la visualisation
+        // en fonction du moyen de mobilité sélectionné
+    });
 });
+
 // Export pour debug
 window.App = {
     state: AppState,
@@ -1967,16 +2096,19 @@ class SimpleAnimationPlayer {
         this.mobileMarker = null;
         this.map = null;
         this.animationInterval = null;
-    this.setupEventListeners();
-	this.isPlaying = false;
-    this.isLooping = false;
-    this.currentPosition = 0;
-    this.traceCoordinates = [];
-    this.mobileMarker = null;
-    this.map = null;
-    this.animationInterval = null;
-    
-    // === NOUVELLES PROPRIÉTES POUR AVANCE RAPIDE ===
+        this.setupEventListeners();
+        this.isPlaying = false;
+        this.isLooping = false;
+        this.currentPosition = 0;
+        this.traceCoordinates = [];
+        this.mobileMarker = null;
+        this.map = null;
+        this.animationInterval = null;
+        
+        // === NOUVELLES PROPRIÉTÉS POUR AVANCE RAPIDE ===
+        this.isFastForward = false;
+        this.fastForwardFactor = 1;
+        this.wasPlaying = false;
     }
 
     setupEventListeners() {
@@ -2025,25 +2157,25 @@ class SimpleAnimationPlayer {
         }
     }
 
- play() {
-    if (this.traceCoordinates.length === 0) return;
-    
-    this.isPlaying = true;
-    const buttons = document.querySelectorAll('.ctrl-btn');
-    if (buttons[1]) buttons[1].innerHTML = '⏸️';
-    
-    // ===== FAIRE DISPARAÎTRE LE MARQUEUR DE DÉPART =====
-    if (AppState.startMarker) {
-        AppState.startMarker.remove();
-        AppState.startMarker = null;
-        console.log("🗑️ Marqueur de départ supprimé");
+    play() {
+        if (this.traceCoordinates.length === 0) return;
+        
+        this.isPlaying = true;
+        const buttons = document.querySelectorAll('.ctrl-btn');
+        if (buttons[1]) buttons[1].innerHTML = '⏸️';
+        
+        // ===== FAIRE DISPARAÎTRE LE MARQUEUR DE DÉPART =====
+        if (AppState.startMarker) {
+            AppState.startMarker.remove();
+            AppState.startMarker = null;
+            console.log("🗑️ Marqueur de départ supprimé");
+        }
+        // ===== FIN SUPPRESSION MARQUEUR =====
+        
+        this.animationInterval = setInterval(() => {
+            this.moveToNextPosition();
+        }, 100);
     }
-    // ===== FIN SUPPRESSION MARQUEUR =====
-    
-    this.animationInterval = setInterval(() => {
-        this.moveToNextPosition();
-    }, 100);
-}
 
     pause() {
         this.isPlaying = false;
@@ -2056,154 +2188,136 @@ class SimpleAnimationPlayer {
         }
     }
 
-rewind() {
-    this.pause();
-    this.currentPosition = 0;
-    
-    // ===== RÉAFFICHER LE MARQUEUR DE DÉPART =====
-    if (AppState.currentCoordinates && AppState.currentCoordinates.length > 0 && !AppState.startMarker) {
-        const startCoord = AppState.currentCoordinates[0];
-        const mobileIcon = document.getElementById('mobileIconValue')?.textContent || '✈️';
+    rewind() {
+        this.pause();
+        this.currentPosition = 0;
         
-        const markerEl = document.createElement('div');
-        markerEl.style.fontSize = '32px';
-        markerEl.style.cursor = 'pointer';
-        markerEl.textContent = mobileIcon;
-        markerEl.title = `Départ - ${mobileIcon}`;
-        
-        AppState.startMarker = new maplibregl.Marker({ element: markerEl })
-            .setLngLat([startCoord[0], startCoord[1]])
-            .addTo(this.map);
-        
-        console.log(`📍 Marqueur de départ réaffiché: ${mobileIcon}`);
-    }
-    // ===== FIN RÉAFFICHAGE MARQUEUR =====
-    
-    this.updateMarkerPosition();
-}
-fastForward() {
-    if (this.traceCoordinates.length === 0) return;
-    
-    // Si déjà en avance rapide, augmenter le facteur ou revenir à la normale
-    if (this.isFastForward) {
-        if (this.fastForwardFactor < 16) {
-            // Augmenter le facteur
-            this.fastForwardFactor = Math.min(this.fastForwardFactor * 2, 16);
-        } else {
-            // Revenir à la vitesse normale après 16x
-            this.stopFastForward();
-            return;
+        // ===== RÉAFFICHER LE MARQUEUR DE DÉPART =====
+        if (AppState.currentCoordinates && AppState.currentCoordinates.length > 0 && !AppState.startMarker) {
+            const startCoord = AppState.currentCoordinates[0];
+            const mobileIcon = document.getElementById('mobileIconValue')?.textContent || '✈️';
+            
+            const markerEl = document.createElement('div');
+            markerEl.style.fontSize = '32px';
+            markerEl.style.cursor = 'pointer';
+            markerEl.textContent = mobileIcon;
+            markerEl.title = `Départ - ${mobileIcon}`;
+            
+            AppState.startMarker = new maplibregl.Marker({ element: markerEl })
+                .setLngLat([startCoord[0], startCoord[1]])
+                .addTo(this.map);
+            
+            console.log(`📍 Marqueur de départ réaffiché: ${mobileIcon}`);
         }
-    } else {
-        // Première activation de l'avance rapide
-        this.isFastForward = true;
-        this.fastForwardFactor = 2; // Commence à 2x
-        this.wasPlaying = this.isPlaying; // Sauvegarder l'état de lecture
+        // ===== FIN RÉAFFICHAGE MARQUEUR =====
+        
+        this.updateMarkerPosition();
     }
-    
-    console.log(`⏭️ Avance rapide: ${this.fastForwardFactor}x`);
-    
-    // Mettre à jour l'apparence du bouton
-    const buttons = document.querySelectorAll('.ctrl-btn');
-    if (buttons[2]) {
-        buttons[2].innerHTML = `⏭️${this.fastForwardFactor}x`;
-        buttons[2].style.backgroundColor = '#4CAF50';
-        buttons[2].title = `Avance rapide ${this.fastForwardFactor}x`;
-    }
-    
-    // Si pas déjà en lecture, démarrer l'avance rapide
-    if (!this.isPlaying) {
-        this.playFastForward();
-    } else {
-        // Si déjà en lecture, ajuster la vitesse
-        this.adjustAnimationSpeed();
-    }
-}
 
-stopFastForward() {
-    this.isFastForward = false;
-    this.fastForwardFactor = 1;
-    
-    // Restaurer l'apparence du bouton
-    const buttons = document.querySelectorAll('.ctrl-btn');
-    if (buttons[2]) {
-        buttons[2].innerHTML = '⏭️';
-        buttons[2].style.backgroundColor = '';
-        buttons[2].title = 'Avance rapide';
-    }
-    
-    console.log("⏭️ Retour à la vitesse normale");
-    
-    this.pause();
-    
-    // Si on était en lecture avant l'avance rapide, reprendre la lecture normale
-    if (this.wasPlaying) {
-        setTimeout(() => {
-            this.play();
-        }, 100);
-    }
-}
-playFastForward() {
-    this.isPlaying = true;
-    const buttons = document.querySelectorAll('.ctrl-btn');
-    if (buttons[1]) buttons[1].innerHTML = '⏸️';
-    
-    // Supprimer le marqueur de départ si présent
-    if (AppState.startMarker) {
-        AppState.startMarker.remove();
-        AppState.startMarker = null;
-    }
-    
-    this.animationInterval = setInterval(() => {
-        this.moveToNextPositionFast();
-    }, 100 / this.fastForwardFactor); // Vitesse ajustée selon le facteur
-}
-
-moveToNextPositionFast() {
-    this.currentPosition += this.fastForwardFactor;
-    
-    if (this.currentPosition >= this.traceCoordinates.length) {
-        if (this.isLooping) {
-            this.currentPosition = 0;
+    fastForward() {
+        if (this.traceCoordinates.length === 0) return;
+        
+        // Si déjà en avance rapide, augmenter le facteur ou revenir à la normale
+        if (this.isFastForward) {
+            if (this.fastForwardFactor < 16) {
+                // Augmenter le facteur
+                this.fastForwardFactor = Math.min(this.fastForwardFactor * 2, 16);
+            } else {
+                // Revenir à la vitesse normale après 16x
+                this.stopFastForward();
+                return;
+            }
         } else {
-            this.stopFastForward();
-            return;
+            // Première activation de l'avance rapide
+            this.isFastForward = true;
+            this.fastForwardFactor = 2; // Commence à 2x
+            this.wasPlaying = this.isPlaying; // Sauvegarder l'état de lecture
+        }
+        
+        console.log(`⏭️ Avance rapide: ${this.fastForwardFactor}x`);
+        
+        // Mettre à jour l'apparence du bouton
+        const buttons = document.querySelectorAll('.ctrl-btn');
+        if (buttons[2]) {
+            buttons[2].innerHTML = `⏭️${this.fastForwardFactor}x`;
+            buttons[2].style.backgroundColor = '#4CAF50';
+            buttons[2].title = `Avance rapide ${this.fastForwardFactor}x`;
+        }
+        
+        // Si pas déjà en lecture, démarrer l'avance rapide
+        if (!this.isPlaying) {
+            this.playFastForward();
+        } else {
+            // Si déjà en lecture, ajuster la vitesse
+            this.adjustAnimationSpeed();
         }
     }
-    
-    this.updateMarkerPosition();
-}
 
-stopFastForward() {
-    this.isFastForward = false;
-    this.fastForwardFactor = 1;
-    
-    // Restaurer l'apparence du bouton
-    const buttons = document.querySelectorAll('.ctrl-btn');
-    if (buttons[2]) {
-        buttons[2].innerHTML = '⏭️';
-        buttons[2].style.backgroundColor = '';
+    stopFastForward() {
+        this.isFastForward = false;
+        this.fastForwardFactor = 1;
+        
+        // Restaurer l'apparence du bouton
+        const buttons = document.querySelectorAll('.ctrl-btn');
+        if (buttons[2]) {
+            buttons[2].innerHTML = '⏭️';
+            buttons[2].style.backgroundColor = '';
+            buttons[2].title = 'Avance rapide';
+        }
+        
+        console.log("⏭️ Retour à la vitesse normale");
+        
+        this.pause();
+        
+        // Si on était en lecture avant l'avance rapide, reprendre la lecture normale
+        if (this.wasPlaying) {
+            setTimeout(() => {
+                this.play();
+            }, 100);
+        }
     }
-    
-    this.pause();
-    
-    // Si on était en lecture avant l'avance rapide, reprendre la lecture normale
-    if (this.wasPlaying) {
-        setTimeout(() => {
-            this.play();
-        }, 100);
-    }
-}
 
-adjustAnimationSpeed() {
-    // Redémarrer l'animation avec la nouvelle vitesse
-    if (this.animationInterval) {
-        clearInterval(this.animationInterval);
+    playFastForward() {
+        this.isPlaying = true;
+        const buttons = document.querySelectorAll('.ctrl-btn');
+        if (buttons[1]) buttons[1].innerHTML = '⏸️';
+        
+        // Supprimer le marqueur de départ si présent
+        if (AppState.startMarker) {
+            AppState.startMarker.remove();
+            AppState.startMarker = null;
+        }
+        
         this.animationInterval = setInterval(() => {
             this.moveToNextPositionFast();
-        }, 100 / this.fastForwardFactor);
+        }, 100 / this.fastForwardFactor); // Vitesse ajustée selon le facteur
     }
-}
+
+    moveToNextPositionFast() {
+        this.currentPosition += this.fastForwardFactor;
+        
+        if (this.currentPosition >= this.traceCoordinates.length) {
+            if (this.isLooping) {
+                this.currentPosition = 0;
+            } else {
+                this.stopFastForward();
+                return;
+            }
+        }
+        
+        this.updateMarkerPosition();
+    }
+
+    adjustAnimationSpeed() {
+        // Redémarrer l'animation avec la nouvelle vitesse
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+            this.animationInterval = setInterval(() => {
+                this.moveToNextPositionFast();
+            }, 100 / this.fastForwardFactor);
+        }
+    }
+
     toggleLoop() {
         this.isLooping = !this.isLooping;
         const buttons = document.querySelectorAll('.ctrl-btn');
@@ -2233,9 +2347,9 @@ adjustAnimationSpeed() {
             this.mobileMarker.setLngLat([coord.lng, coord.lat]);
             
             // Centrer la carte sur la position si le recentrage est enable)
-if (this.isRecenterEnabled) {
-  this.map.flyTo({ center: [coord.lng, coord.lat], essential: true, duration: 500 });
-}
+            if (this.isRecenterEnabled) {
+                this.map.flyTo({ center: [coord.lng, coord.lat], essential: true, duration: 500 });
+            }
             this.updateMobileIcon();
         }
     }
@@ -2269,92 +2383,149 @@ function initSimpleAnimation(map, coordinates) {
     }
     simpleAnimationPlayer.init(map, coordinates);
 }
+
 // ===============================
-// MASQUER LES PANNEAUX LATERAUX ET CONTROLES APRÃˆS INACTIVITÃ‰
+// MASQUER LES PANNEAUX LATERAUX ET CONTROLES APRÈS INACTIVITÉ
 // AVEC EFFET DE GLISSEMENT VERS L'EXTERIEUR
 // ===============================
 
 let inactivityTimer = null;
 
 const controlsSelector = `
-  .ctrl-btn,
-  .debug-info,
-  .slider-container,
-  .control-panel,
-  .player-controls,
-  .toolbar,
-  .left-panel,
-  .right-panel,
-  .controls,
-  .controls-left,
-  .controls-right,
-  .panel-background,
-  #traceWidth, #traceWidthValue, label[for="traceWidth"],
-  #traceColor, label[for="traceColor"],
-  #traceOpacity, #traceOpacityValue, label[for="traceOpacity"],
-  #mobileSelector, #mobileIconValue, label[for="mobileSelector"],
-  #zScale, #zScaleValue, label[for="zScale"],
-  .maplibregl-ctrl-top-left,
-  .maplibregl-ctrl-top-right,
-  .maplibregl-ctrl-bottom-left,
-  .maplibregl-ctrl-bottom-right
-  `;
+    .ctrl-btn,
+    .debug-info,
+    .slider-container,
+    .control-panel,
+    .player-controls,
+    .toolbar,
+    .left-panel,
+    .right-panel,
+    .controls,
+    .controls-left,
+    .controls-right,
+    .panel-background,
+    #traceWidth, #traceWidthValue, label[for="traceWidth"],
+    #traceColor, label[for="traceColor"],
+    #traceOpacity, #traceOpacityValue, label[for="traceOpacity"],
+    #mobileSelector, #mobileIconValue, label[for="mobileSelector"],
+    #zScale, #zScaleValue, label[for="zScale"],
+    .maplibregl-ctrl-top-left,
+    .maplibregl-ctrl-top-right,
+    .maplibregl-ctrl-bottom-left,
+    .maplibregl-ctrl-bottom-right
+    `;
 
 function hideControls() {
-  if (AppState.currentPage !== 'playeur') return;
+    if (AppState.currentPage !== 'playeur') return;
 
-  // Ã‰tape 1 : 3 secondes - faire glisser vers l'exterieur
-  document.querySelectorAll(controlsSelector).forEach(el => {
-    // Dà©tecter si c'est un panneau de gauche ou droite
-    const isLeftPanel = el.classList.contains('controls-left') || 
-                        el.classList.contains('left-panel') ||
-                        el.classList.contains('maplibregl-ctrl-top-left') ||
-                        el.classList.contains('maplibregl-ctrl-bottom-left');
-    
-    const isRightPanel = el.classList.contains('controls-right') || 
-                         el.classList.contains('right-panel') ||
-                         el.classList.contains('maplibregl-ctrl-top-right') ||
-                         el.classList.contains('maplibregl-ctrl-bottom-right');
-
-    // Appliquer l'animation de glissement
-	el.style.transition = 'transform 3s ease-in-out, opacity 2s ease-in-out 3s';
-    el.style.opacity = '0';
-  
-  if (isLeftPanel) {
-      el.style.transform = 'translateX(-120%)';
-    } else if (isRightPanel) {
-      el.style.transform = 'translateX(120%)';
-    }
-    
-    // Transparence aprÃ¨s 3 secondes
-    el.style.opacity = '0';
-  });
-
-  // Ã‰tape 2 : aprÃ¨s 5 secondes total - complÃ¨tement disparu
-  setTimeout(() => {
+    // Étape 1 : 3 secondes - faire glisser vers l'exterieur
     document.querySelectorAll(controlsSelector).forEach(el => {
-      el.style.pointerEvents = 'none';
+        // Détecter si c'est un panneau de gauche ou droite
+        const isLeftPanel = el.classList.contains('controls-left') || 
+                            el.classList.contains('left-panel') ||
+                            el.classList.contains('maplibregl-ctrl-top-left') ||
+                            el.classList.contains('maplibregl-ctrl-bottom-left');
+        
+        const isRightPanel = el.classList.contains('controls-right') || 
+                            el.classList.contains('right-panel') ||
+                            el.classList.contains('maplibregl-ctrl-top-right') ||
+                            el.classList.contains('maplibregl-ctrl-bottom-right');
+
+        // Appliquer l'animation de glissement
+        el.style.transition = 'transform 3s ease-in-out, opacity 2s ease-in-out 3s';
+        el.style.opacity = '0';
+    
+        if (isLeftPanel) {
+            el.style.transform = 'translateX(-120%)';
+        } else if (isRightPanel) {
+            el.style.transform = 'translateX(120%)';
+        }
+        
+        // Transparence après 3 secondes
+        el.style.opacity = '0';
     });
-  }, 5000);
+
+    // Étape 2 : après 5 secondes total - complètement disparu
+    setTimeout(() => {
+        document.querySelectorAll(controlsSelector).forEach(el => {
+            el.style.pointerEvents = 'none';
+        });
+    }, 5000);
 }
 
 function showControls() {
-  document.querySelectorAll(controlsSelector).forEach(el => {
-    el.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
-    el.style.transform = 'translateX(0)';
-    el.style.opacity = '1';
-    el.style.pointerEvents = 'auto';
-  });
-  resetInactivityTimer();
+    document.querySelectorAll(controlsSelector).forEach(el => {
+        el.style.transition = 'transform 0.3s ease, opacity 0.3s ease';
+        el.style.transform = 'translateX(0)';
+        el.style.opacity = '1';
+        el.style.pointerEvents = 'auto';
+    });
+    resetInactivityTimer();
 }
 
 function resetInactivityTimer() {
-  clearTimeout(inactivityTimer);
-  inactivityTimer = setTimeout(() => hideControls(), 5000); // 5 s d'inactivitÃ©
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => hideControls(), 5000); // 5 s d'inactivité
 }
 
+// Dans votre Script.js - fonction pour mettre à jour les couleurs dynamiquement
+function updateControlColors(color) {
+    // Mettre à jour les curseurs avec la nouvelle couleur
+    const traceWidth = document.getElementById('traceWidth');
+    const traceOpacity = document.getElementById('traceOpacity');
+    const traceColor = document.getElementById('traceColor');
+    
+    // Convertir la couleur hex en RGB pour les dégradés
+    const hexToRgb = (hex) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return { r, g, b };
+    };
+    
+    const rgb = hexToRgb(color);
+    
+    // Mettre à jour les dégradés des curseurs
+    traceWidth.style.background = `linear-gradient(to right, 
+        rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.3), 
+        rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)
+    )`;
+    
+    traceOpacity.style.background = `linear-gradient(to right, 
+        rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.1), 
+        rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.9)
+    )`;
+    
+    // Mettre à jour les thumbs des curseurs
+    const style = document.createElement('style');
+    style.id = 'dynamic-slider-styles';
+    style.textContent = `
+        #traceWidth::-webkit-slider-thumb { background: ${color}; }
+        #traceWidth::-moz-range-thumb { background: ${color}; }
+        #traceOpacity::-webkit-slider-thumb { background: ${color}; }
+        #traceOpacity::-moz-range-thumb { background: ${color}; }
+    `;
+    
+    // Supprimer l'ancien style s'il existe
+    const oldStyle = document.getElementById('dynamic-slider-styles');
+    if (oldStyle) oldStyle.remove();
+    
+    // Ajouter le nouveau style
+    document.head.appendChild(style);
+}
+
+// Écouter les changements de couleur
+document.getElementById('traceColor').addEventListener('input', function(e) {
+    updateControlColors(e.target.value);
+});
+
+// Initialiser avec la couleur par défaut
+document.addEventListener('DOMContentLoaded', function() {
+    updateControlColors('#ff0000'); // Rouge par défaut
+});
+
 ['mousemove', 'mousedown', 'touchstart', 'click', 'keydown'].forEach(evt => {
-  document.addEventListener(evt, showControls, { passive: true });
+    document.addEventListener(evt, showControls, { passive: true });
 });
 
 resetInactivityTimer();
