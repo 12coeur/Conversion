@@ -584,13 +584,87 @@ header {
   color: #333;
   user-select: none;
 }
+/* Double la taille du toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 120px;  /* Doublé */
+  height: 60px;  /* Doublé */
+}
 
+.toggle-checkbox {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-label {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #333;
+  transition: .4s;
+  border-radius: 60px;  /* Adapté à la nouvelle hauteur */
+  border: 3px solid #555;  /* Légèrement plus épais */
+}
+
+.toggle-label:before {
+  position: absolute;
+  content: "";
+  height: 44px;  /* Doublé */
+  width: 44px;   /* Doublé */
+  left: 6px;     /* Ajusté */
+  bottom: 4px;   /* Ajusté */
+  background-color: #777;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+.toggle-checkbox:checked + .toggle-label {
+  background-color: #00ccff;
+  border-color: #00ccff;
+}
+
+.toggle-checkbox:checked + .toggle-label:before {
+  transform: translateX(58px);  /* Ajusté pour la nouvelle largeur */
+  background-color: white;
+}
+
+/* Styles pour les labels texte à l'intérieur du toggle */
+.toggle-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;  /* Texte plus grand */
+  font-weight: bold;
+  color: white;
+  transition: opacity 0.3s ease;
+}
+
+/* Labels selon l'état */
 .toggle-checkbox:checked + .toggle-label .toggle-inner::before {
-  content: "VOL";
+  content: "🪽vol";
+  margin-right: 125px; /* Décalé vers la gauche quand activé */
 }
 
 .toggle-checkbox:not(:checked) + .toggle-label .toggle-inner::before {
-  content: "Sol";
+  content: "🥾Sol";
+  margin-right: 125px; /* Décalé  */
+}
+.toggle-checkbox:checked + .toggle-label .toggle-inner::before {
+  content: "🪽vol";
+}
+
+.toggle-checkbox:not(:checked) + .toggle-label .toggle-inner::before {
+  content: "🥾Sol";
 }
 
 .vol-control {
@@ -1371,4 +1445,93 @@ header {
     background: rgba(76, 175, 80, 0.3) !important;
     border-color: #4CAF50 !important;
     box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+}
+/* Styles pour le bouton de rafraîchissement */
+.control-group.refresh-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.refresh-button {
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #00ccff;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00ccff;
+}
+
+.refresh-button:hover {
+  background: rgba(0, 204, 255, 0.2);
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(0, 204, 255, 0.5);
+}
+
+.refresh-button:active {
+  transform: scale(0.95);
+  background: rgba(0, 204, 255, 0.4);
+}
+
+.refresh-label {
+  margin-top: 5px;
+  font-size: 11px;
+  color: #00ccff;
+  text-align: center;
+  font-weight: bold;
+}
+/* Groupe compact */
+.compact-group {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 15px;
+}
+
+.toggle-container,
+.button-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Réutilisation de vos styles existants pour les labels */
+.control-label {
+  font-size: 11px;
+  color: #00ccff;
+  font-weight: bold;
+}
+
+/* Réutilisation du style de bouton existant */
+.icon-button {
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #00ccff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00ccff;
+}
+
+.icon-button:hover {
+  background: rgba(0, 204, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* Animation simple sans keyframes */
+.icon-button.rotating {
+  transform: rotate(360deg);
+  transition: transform 0.6s ease;
 }
