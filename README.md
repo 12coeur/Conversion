@@ -8,3 +8,4 @@ J'ai supprimé Conversions
 Ce repository annule le Conversions qui doit être supprimé.
 En définitive les bibliothèque ne sont pas accessible il faut en trouver des pérènes !
 - Modifié pour une meilleure visibilité sur Android
+N'ayant pas réussi à finaliser avec ces bibliothèques (Problèmes d'élévations insolubles)? je laisse en l'état avec ces dernières mise à jour.
