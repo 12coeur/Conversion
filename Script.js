@@ -18,7 +18,10 @@ const AppState = {
     currentFileName: null,
     currentFileType: null
 };
-
+// ===============================
+// TRACE VOLANTE - INSTANCE GLOBALE
+// ===============================
+let traceVolanteInstance = null;
 // Variable globale pour stocker le contenu brut du fichier
 let currentRawContent = "";
 
@@ -41,7 +44,7 @@ function startPitchCycle(map, cameraState) {
     // Direction initiale (1 = monte, -1 = descend)
     cameraState.pitchDirection = 1;
 
-    // Amplitude de ±10° autour de l’angle initial
+    // Amplitude de ±10° autour de l'angle initial
     const amplitude = 10;
     const pitchMin = Math.max(0, basePitch - amplitude);
     const pitchMax = Math.min(80, basePitch + amplitude);
@@ -74,7 +77,6 @@ function startPitchCycle(map, cameraState) {
     }, 200);
 }
 
-
 function stopPitchCycle(cameraState) {
     console.log("⏹️ Arrêt du cycle pitch");
     cameraState.isPitchCycling = false;
@@ -89,6 +91,7 @@ function stopPitchCycle(cameraState) {
     }
     showCameraFeedback("Cycle Monte/Baisse", "ARRÊTÉ");
 }
+
 function resetPitchCycle(cameraState) {
     console.log("🔄 Réinitialisation du cycle pitch");
     cameraState.isPitchCycling = false;
@@ -104,6 +107,7 @@ function resetPitchCycle(cameraState) {
         pitchCycleBtn.style.backgroundColor = '';
     }
 }
+
 function startCameraRotation(map, cameraState) {
     if (cameraState.rotationInterval) {
         clearInterval(cameraState.rotationInterval);
@@ -394,7 +398,7 @@ function setupCameraControls() {
         }
     });
     
-// Démarrer la configuration des écouteurs
+    // Démarrer la configuration des écouteurs
     setupMapInteractionListeners();
     
     console.log("✅ Contrôles caméra initialisés");
@@ -432,13 +436,12 @@ function getLoadedTraceData() {
     };
 }
 
-/**
- * Télécharge un fichier avec le contenu fourni
- * @param {string} content - Contenu du fichier
- * @param {string} filename - Nom du fichier de destination
- * @param {string} mimeType - Type MIME du fichier
- */
 function downloadFile(content, filename, mimeType) {
+    
+    // Forcer le mode sol
+    if (window.traceVolanteInstance) {
+        window.traceVolanteInstance.resetFlightMode();
+    }
     try {
         const blob = new Blob([content], { type: mimeType });
         const url = URL.createObjectURL(blob);
@@ -536,6 +539,7 @@ function initializeApp() {
     setupZScaleControl();
     setupExportButtons();
     setupVolToggle();
+    setupRefreshButton(); // ← AJOUTEZ CETTE LIGNE
     setupCameraControls();
     setupCameraKeyboardShortcuts();
     showPage('accueil');
@@ -545,6 +549,49 @@ function initializeApp() {
     }, 1000);
     
     console.log("✅ Application initialisée avec succès");
+}
+
+// Et voici la fonction forceRefreshTrace améliorée
+function forceRefreshTrace() {
+    console.log("🔄 FORÇAGE RAFRAÎCHISSEMENT TRACE");
+    
+    if (!AppState.currentCoordinates || AppState.currentCoordinates.length === 0) {
+        showMessage("❌ Aucune trace chargée à rafraîchir", "red", 3000);
+        return;
+    }
+    
+    showMessage("🔄 Actualisation de la trace...", "#0066cc", 2000);
+    
+    // Animation du bouton
+    const refreshBtn = document.getElementById('forceRefreshBtn');
+    if (refreshBtn) {
+        refreshBtn.style.transform = 'rotate(360deg)';
+        refreshBtn.style.transition = 'transform 0.5s ease';
+        setTimeout(() => {
+            refreshBtn.style.transform = 'rotate(0deg)';
+        }, 500);
+    }
+    
+    // Destruction de l'instance existante
+    if (traceVolanteInstance) {
+        console.log("🗑️ Destruction instance TraceVolante existante");
+        traceVolanteInstance.destroy();
+        traceVolanteInstance = null;
+    }
+    
+    // Réinitialisation forcée du toggle Vol
+    const volToggle = document.getElementById('volToggle');
+    if (volToggle && volToggle.checked) {
+        console.log("⚡ Toggle Vol était coché → recréation");
+        // Le toggle reste coché, mais on recrée l'instance
+    }
+    
+    // Recréer la trace
+    setTimeout(() => {
+        refreshPlayeurTrace();
+        console.log("✅ Rafraîchissement forcé terminé");
+        showMessage("✅ Trace rafraîchie avec succès", "lime", 3000);
+    }, 300);
 }
 
 // Configuration de la navigation
@@ -598,9 +645,8 @@ function setupNavigation() {
         }
     });
 }
-
 function showPage(pageId) {
-    console.log(`📄 Changement de page: ${pageId}`);
+    console.log(`📄 Changement de page: ${pageId}`);  // ✅ Correct
     
     // Gestion de la page export
     if(pageId === 'export') {
@@ -612,7 +658,7 @@ function showPage(pageId) {
         page.classList.remove('active');
     });
     
-    const targetPage = document.getElementById(`page-${pageId}`);
+    const targetPage = document.getElementById(`page-${pageId}`);  // ✅ Correct
     if (targetPage) {
         targetPage.classList.add('active');
         AppState.currentPage = pageId;
@@ -621,7 +667,7 @@ function showPage(pageId) {
             link.classList.remove('active');
         });
         
-        const activeLink = document.querySelector(`[data-page="${pageId}"]`);
+        const activeLink = document.querySelector(`[data-page="${pageId}"]`);  // ✅ Correct
         if (activeLink) {
             activeLink.classList.add('active');
         }
@@ -633,7 +679,7 @@ function showPage(pageId) {
         
         handlePageTransition(pageId);
         
-        console.log(`✅ Page ${pageId} affichée`);
+        console.log(`✅ Page ${pageId} affichée`);  // ✅ Correct
     }
 }
 
@@ -830,6 +876,16 @@ function refreshPlayeurTrace() {
     if (AppState.currentCoordinates && AppState.currentCoordinates.length > 0) {
         console.log("🔄 Actualisation forcée de la trace playeur");
         displayTraceOnPlayeur(AppState.currentCoordinates, AppState.currentFileName, AppState.currentFileType);
+        
+        // → À la fin :
+        if (document.getElementById('volToggle').checked) {
+            initTraceVolante();
+            setTimeout(() => {
+                if (window.traceVolanteInstance) {
+                    window.traceVolanteInstance.safeUpdateTrace();
+                }
+            }, 600);
+        }
     }
 }
 
@@ -996,6 +1052,7 @@ function initMap() {
 // ===============================
 // CARTE PLAYEUR
 // ===============================
+
 function initMapPlayeur() {
     if (AppState.mapPlayeurInitialized && AppState.mapPlayeur) {
         return;
@@ -1056,7 +1113,6 @@ function initMapPlayeur() {
                     exaggeration: initialZScale 
                 });
 
-                // Vérifier si un NavigationControl existe déjà
                 const existingControls = AppState.mapPlayeur._controls?.filter(
                     ctrl => ctrl instanceof maplibregl.NavigationControl
                 );
@@ -1065,12 +1121,20 @@ function initMapPlayeur() {
                 }
 
                 console.log("✅ Relief 3D ajouté au playeur");
+
+                // Initialisation de TraceVolante après la carte playeur
+                if (typeof TraceVolante !== 'undefined') {
+                    window.traceVolanteInstance = new TraceVolante(AppState.mapPlayeur, AppState);
+                    console.log("✅ TraceVolante initialisée dans initMapPlayeur");
+                } else {
+                    console.warn("⚠️ TraceVolante non défini");
+                }
+
+                if (AppState.currentCoordinates) {
+                    displayTraceOnPlayeur(AppState.currentCoordinates, AppState.currentFileName, AppState.currentFileType);
+                }
             } catch (error) {
                 console.error("⚠️ Erreur ajout relief playeur:", error);
-            }
-
-            if (AppState.currentCoordinates) {
-                displayTraceOnPlayeur(AppState.currentCoordinates, AppState.currentFileName, AppState.currentFileType);
             }
         });
     } catch (error) {
@@ -1079,160 +1143,259 @@ function initMapPlayeur() {
     }
 }
 
+function initTraceVolante() {
+    if (typeof TraceVolante === 'undefined') {
+        console.error("TraceVolante non chargé ! Vérifie <script src='traceVolante.js'>");
+        return null;
+    }
+
+    // FORCER UNE NOUVELLE INSTANCE À CHAQUE FOIS
+    if (traceVolanteInstance) {
+        console.log("🔄 Destruction de l'ancienne instance TraceVolante");
+        traceVolanteInstance.destroy();
+        traceVolanteInstance = null;
+    }
+
+    const map = AppState.mapPlayeur;
+    if (!map) {
+        console.warn("Map Playeur non prête pour TraceVolante");
+        return null;
+    }
+
+    traceVolanteInstance = new TraceVolante(map, AppState);
+    console.log("🆕 TraceVolante INSTANCIÉE avec succès");
+
+    // Forcer la mise à jour si volToggle déjà coché
+    const volToggle = document.getElementById('volToggle');
+    if (volToggle?.checked) {
+        console.log("⚡ VolToggle coché → mise à jour immédiate");
+        setTimeout(() => {
+            if (traceVolanteInstance) {
+                traceVolanteInstance.safeUpdateTrace();
+            }
+        }, 500);
+    }
+
+    return traceVolanteInstance;
+}
+
+
 function displayTraceOnPlayeur(coordinates, fileName, fileType) {
     if (!AppState.mapPlayeur || !AppState.mapPlayeurInitialized) {
         console.warn("Carte playeur non initialisée");
         return;
     }
-    
-    console.log(`📍 Affichage trace playeur: ${fileName} (${coordinates.length} points)`);
-    
-    const geoJSON = {
-        type: "FeatureCollection",
-        features: [{
-            type: "Feature",
-            geometry: {
-                type: "LineString",
-                coordinates: coordinates
-            },
-            properties: {
-                name: fileName
+
+    console.log(`🎯 Affichage trace playeur: ${fileName} (${coordinates.length} points)`);
+
+    // === SAUVEGARDER L'ÉCHELLE Z ACTUELLE ===
+    const currentZScale = parseFloat(document.getElementById('zScale')?.value) || 1.5;
+    console.log(`💾 Échelle Z sauvegardée: ${currentZScale}`);
+
+    AppState.currentCoordinates = coordinates.map(c => [c[0], c[1], c[2] || 0]);
+    AppState.currentFileName = fileName;
+
+    const volToggle = document.getElementById("volToggle");
+    if (!volToggle) {
+        console.warn("volToggle non trouvé → polling...");
+        const check = setInterval(() => {
+            const toggle = document.getElementById("volToggle");
+            if (toggle) {
+                clearInterval(check);
+                console.log("volToggle trouvé → reprise");
+                setTimeout(() => continueDisplay(currentZScale), 100);
             }
-        }]
-    };
+        }, 200);
+        return;
+    }
+
+    const isFlightMode = volToggle.checked;
+    console.log(`🔀 Mode vol: ${isFlightMode}, Instance existante: ${!!traceVolanteInstance}`);
+
+    function continueDisplay(savedZScale) {
+        if (isFlightMode) {
+            console.log("🔄 MODE VOL → Réinitialisation et activation TraceVolante");
+            
+            // FORCER UNE NOUVELLE INSTANCE
+            const tv = initTraceVolante();
+            if (tv) {
+                setTimeout(() => {
+                    console.log("🚀 Lancement mise à jour trace volante");
+                    tv.safeUpdateTrace();
+                }, 800);
+            }
+            return;
+        }
+
+        // === MODE SOL ===
+        console.log(`🏔️ MODE SOL → restauration échelle Z: ${savedZScale}`);
+
+        // Nettoyer les couches 3D volantes
+        ['trace-flight-line', 'trace-flight-glow', 'trace-flight-markers'].forEach(id => {
+            if (AppState.mapPlayeur.getLayer(id)) {
+                AppState.mapPlayeur.removeLayer(id);
+            }
+            if (AppState.mapPlayeur.getSource(id)) {
+                AppState.mapPlayeur.removeSource(id);
+            }
+        });
+
+        // Réactiver le terrain AVEC l'échelle sauvegardée
+        if (AppState.mapPlayeur.getSource('dem-playeur')) {
+            AppState.mapPlayeur.setTerrain({
+                source: "dem-playeur",
+                exaggeration: savedZScale
+            });
+            console.log(`✅ Relief 3D restauré avec Z=${savedZScale}`);
+        }
+
+        // Mettre à jour le slider Z scale
+        const zScaleInput = document.getElementById('zScale');
+        const zScaleValue = document.getElementById('zScaleValue');
+        if (zScaleInput && zScaleValue) {
+            zScaleInput.value = savedZScale;
+            zScaleValue.textContent = savedZScale.toFixed(1);
+        }
+
+        // Recréer la trace 2D
+        recreateGroundTrace(coordinates, fileName, savedZScale);
+    }
+
+    continueDisplay(currentZScale);
+}
+
+function forceRefreshTrace() {
+    console.log("🔄 FORÇAGE RAFRAÎCHISSEMENT TRACE");
     
+    if (!AppState.currentCoordinates) {
+        showMessage("❌ Aucune trace chargée", "red", 3000);
+        return;
+    }
+    
+    // Animation simple
+    const refreshBtn = document.getElementById('forceRefreshBtn');
+    if (refreshBtn) {
+        refreshBtn.classList.add('rotating');
+        setTimeout(() => refreshBtn.classList.remove('rotating'), 600);
+    }
+    
+    // Votre logique existante...
+    if (traceVolanteInstance) {
+        traceVolanteInstance.destroy();
+        traceVolanteInstance = null;
+    }
+    
+    setTimeout(() => refreshPlayeurTrace(), 300);
+}
+
+// Ajoutez cette fonction dans la section d'initialisation
+function setupRefreshButton() {
+    const refreshBtn = document.getElementById('forceRefreshBtn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log("🔄 Bouton de rafraîchissement cliqué");
+            forceRefreshTrace();
+        });
+        
+        // Ajouter aussi le raccourci clavier F5
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F5') {
+                e.preventDefault();
+                console.log("⌨️ Raccourci F5 - Rafraîchissement forcé");
+                forceRefreshTrace();
+            }
+        });
+        
+        console.log("✅ Bouton de rafraîchissement initialisé");
+    }
+}
+// Ajouter un bouton ou un raccourci pour cette fonction
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'F5') {
+        e.preventDefault();
+        forceRefreshTrace();
+    }
+});
+
+function recreateGroundTrace(coordinates, fileName, zScale) {
+    // Nettoyer l'ancienne trace 2D
     if (AppState.mapPlayeur.getSource('trace-playeur')) {
         try {
             AppState.mapPlayeur.removeLayer('trace-playeur');
             AppState.mapPlayeur.removeSource('trace-playeur');
-            console.log("🧹 Ancienne trace playeur supprimée");
-        } catch (e) {
-            console.warn("Erreur nettoyage:", e);
-        }
+        } catch (e) { console.warn("Erreur nettoyage trace-playeur:", e); }
     }
-    
-    // Supprimer l'ancien marqueur s'il existe
+
+    // Recréer la source GeoJSON
+    const geoJSON = {
+        type: "FeatureCollection",
+        features: [{
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: coordinates },
+            properties: { name: fileName }
+        }]
+    };
+
+    AppState.mapPlayeur.addSource('trace-playeur', { type: 'geojson', data: geoJSON });
+
+    // Recréer la couche
+    const currentColor = document.getElementById('traceColor')?.value || '#ff0000';
+    const currentWidth = parseFloat(document.getElementById('traceWidth')?.value) || 4;
+    const currentOpacity = parseFloat(document.getElementById('traceOpacity')?.value) || 0.9;
+
+    AppState.mapPlayeur.addLayer({
+        id: 'trace-playeur',
+        type: 'line',
+        source: 'trace-playeur',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+            'line-color': currentColor,
+            'line-width': currentWidth,
+            'line-opacity': currentOpacity
+        }
+    });
+
+    console.log(`✅ Trace sol restaurée (Z=${zScale})`);
+
+    // Recréer le marqueur de départ
     if (AppState.startMarker) {
         AppState.startMarker.remove();
+        AppState.startMarker = null;
     }
-    
-    try {
-        AppState.mapPlayeur.addSource('trace-playeur', {
-            type: 'geojson',
-            data: geoJSON
-        });
-        
-        const colorPicker = document.getElementById('traceColor');
-        const currentColor = colorPicker ? colorPicker.value : '#ff0000';
-        
-        AppState.mapPlayeur.addLayer({
-            id: 'trace-playeur',
-            type: 'line',
-            source: 'trace-playeur',
-            layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            paint: {
-                'line-color': currentColor,
-                'line-width': 4,
-                'line-opacity': 0.9
-            }
-        });
-    
-        // --- Gestion du mode vol / sol ---
-        const volToggle = document.getElementById("volToggle");
-        if (volToggle && volToggle.checked) {
-            // Mode vol : trace respecte les altitudes
-            AppState.mapPlayeur.setTerrain(undefined); // Désactive le relief
 
-            // Appliquer les Z d'origine en conservant LineString 3D
-            const elevatedCoords = coordinates.map(coord => [coord[0], coord[1], coord[2] || 0]);
-            AppState.mapPlayeur.getSource("trace-playeur").setData({
-                type: "FeatureCollection",
-                features: [{
-                    type: "Feature",
-                    geometry: { type: "LineString", coordinates: elevatedCoords },
-                    properties: { name: fileName }
-                }]
-            });
-            console.log("Mode VOL actif : la trace utilise la hauteur Z d'origine");
-        } else {
-            // Mode sol : plaquée au terrain avec épaisseur/opacité existante
-            try {
-                AppState.mapPlayeur.setTerrain({
-                    source: "dem-playeur",
-                    exaggeration: parseFloat(document.getElementById("zScale")?.value || 1.5)
-                });
-                console.log("Mode SOL actif : trace plaquée sur le relief 3D");
-            } catch (error) {
-                console.warn("Erreur lors de la réactivation du terrain DEM :", error);
-            }
-        }
+    if (coordinates.length > 0) {
+        const startCoord = coordinates[0];
+        const mobileIcon = document.getElementById('mobileIconValue')?.textContent || '✈️';
+        const markerEl = document.createElement('div');
+        markerEl.style.fontSize = '32px';
+        markerEl.style.cursor = 'pointer';
+        markerEl.textContent = mobileIcon;
+        markerEl.title = `Départ - ${mobileIcon}`;
+        
+        AppState.startMarker = new maplibregl.Marker({ element: markerEl })
+            .setLngLat([startCoord[0], startCoord[1]])
+            .addTo(AppState.mapPlayeur);
+        
+        console.log(`📍 Marqueur de départ réaffiché: ${mobileIcon}`);
+    }
 
-        // actualisation immédiate du vol 
-        if (volToggle) {
-            volToggle.addEventListener("change", () => {
-                if (AppState.currentCoordinates) {
-                    refreshPlayeurTrace();
-                }
-            });
-        }
-        
-        // ===== AJOUT DU MARQUEUR DE DÉPART =====
-        if (coordinates.length > 0) {
-            const startCoord = coordinates[0];
-            const mobileIcon = document.getElementById('mobileIconValue')?.textContent || '✈️';
-            
-            // Créer un élément HTML pour le marqueur
-            const markerEl = document.createElement('div');
-            markerEl.style.fontSize = '32px';
-            markerEl.style.cursor = 'pointer';
-            markerEl.textContent = mobileIcon;
-            markerEl.title = `Départ - ${mobileIcon}`;
-            
-            // Créer le marqueur MapLibre
-            AppState.startMarker = new maplibregl.Marker({ element: markerEl })
-                .setLngLat([startCoord[0], startCoord[1]])
-                .addTo(AppState.mapPlayeur);
-            
-            console.log(`✅ Marqueur de départ ajouté: ${mobileIcon} à (${startCoord[1]}, ${startCoord[0]})`);
-        }
-        // ===== FIN AJOUT MARQUEUR =====
-        
-        // ===== AJOUT DE L'ANIMATION =====
-        // Convertir les coordonnées au format attendu par l'animation
-        const animationCoordinates = coordinates.map(coord => ({
-            lng: coord[0],
-            lat: coord[1],
-            alt: coord[2] || 0
-        }));
-        
-        // Initialiser l'animation player
-        initSimpleAnimation(AppState.mapPlayeur, animationCoordinates);
-        console.log(`🎬 Animation initialisée avec ${animationCoordinates.length} points`);
-        // ===== FIN AJOUT ANIMATION =====
-        
-        const bounds = new maplibregl.LngLatBounds();
-        coordinates.forEach(coord => {
-            bounds.extend([coord[0], coord[1]]);
+    // Réinitialiser l'animation
+    const animationCoordinates = coordinates.map(c => ({ lng: c[0], lat: c[1], alt: c[2] || 0 }));
+    initSimpleAnimation(AppState.mapPlayeur, animationCoordinates);
+    console.log(`🔄 Animation réinitialisée avec ${animationCoordinates.length} points`);
+
+    // Ajuster la vue
+    const bounds = new maplibregl.LngLatBounds();
+    coordinates.forEach(c => bounds.extend([c[0], c[1]]));
+    if (!bounds.isEmpty()) {
+        AppState.mapPlayeur.fitBounds(bounds, { 
+            padding: 80,
+            pitch: 35,
+            bearing: 0,
+            maxZoom: 13,
+            duration: 1000
         });
-        
-        if (!bounds.isEmpty()) {
-            animatedFitBounds(AppState.mapPlayeur, bounds, {
-                padding: 80,
-                pitch: 35,
-                bearing: 0,
-                maxZoom: 13,
-                duration: 2000,
-                rotationDuration: 4000
-            });
-        }
-        
-        console.log(`✅ Trace affichée sur playeur: ${coordinates.length} points`);
-        
-    } catch (error) {
-        console.error("❌ Erreur affichage trace playeur:", error);
     }
 }
 
@@ -1775,6 +1938,13 @@ function showMessage(msg, color = 'red', duration = 5000) {
 function clearTraces() {
     console.log("🧹 Nettoyage complet des traces et états...");
 
+    // 🛑 DÉTRUIRE L'INSTANCE TRACE VOLANTE
+    if (traceVolanteInstance) {
+        traceVolanteInstance.destroy();
+        traceVolanteInstance = null;
+        console.log("🗑️ Instance TraceVolante détruite");
+    }
+
     // 🛑 Arrêter toute animation en cours
     if (window.simpleAnimationPlayer && window.simpleAnimationPlayer.animationInterval) {
         clearInterval(window.simpleAnimationPlayer.animationInterval);
@@ -1782,19 +1952,19 @@ function clearTraces() {
         console.log("⏹️ Animation stoppée");
     }
 
-    // 🔄 RÉINITIALISER LE CYCLE PITCH (AJOUT CRITIQUE)
+    // 🔄 RÉINITIALISER LE CYCLE PITCH
     if (window.cameraState) {
         resetPitchCycle(window.cameraState);
         console.log("🔄 Cycle pitch réinitialisé");
     }
 
-
-    // 🔊 Retirer l'écouteur du volToggle pour éviter les doublons
+    // 🔊 Réinitialiser le toggle Vol
     const volToggle = document.getElementById("volToggle");
     if (volToggle) {
+        volToggle.checked = false; // FORCER LE MODE SOL
         const newToggle = volToggle.cloneNode(true);
         volToggle.parentNode.replaceChild(newToggle, volToggle);
-        console.log("♻️ volToggle réinitialisé");
+        console.log("♻️ volToggle réinitialisé (forcé en mode SOL)");
     }
 
     // 🧭 Supprimer le marqueur de départ
@@ -1813,14 +1983,43 @@ function clearTraces() {
         });
     }
 
-    // 🎮 Nettoyer la carte playeur
+    // 🎮 Nettoyer la carte playeur - TOUTES LES COUCHES
     if (AppState.mapPlayeur && AppState.mapPlayeur.getSource) {
-        ["trace-playeur", "trace-playeur-layer"].forEach(id => {
+        const layersToRemove = [
+            "trace-playeur", 
+            "trace-playeur-layer",
+            "trace-flight-line", 
+            "trace-flight-glow", 
+            "trace-flight-markers"
+        ];
+        
+        layersToRemove.forEach(id => {
             try {
-                if (AppState.mapPlayeur.getLayer(id)) AppState.mapPlayeur.removeLayer(id);
-                if (AppState.mapPlayeur.getSource(id)) AppState.mapPlayeur.removeSource(id);
-            } catch (e) { console.warn("⚠️ Erreur nettoyage playeur:", e); }
+                if (AppState.mapPlayeur.getLayer(id)) {
+                    AppState.mapPlayeur.removeLayer(id);
+                    console.log(`🗑️ Couche ${id} supprimée`);
+                }
+                if (AppState.mapPlayeur.getSource(id)) {
+                    AppState.mapPlayeur.removeSource(id);
+                    console.log(`🗑️ Source ${id} supprimée`);
+                }
+            } catch (e) { 
+                console.warn(`⚠️ Erreur nettoyage ${id}:`, e); 
+            }
         });
+
+        // RESTAURER LE TERRAIN 3D
+        if (AppState.mapPlayeur.getSource('dem-playeur')) {
+            try {
+                AppState.mapPlayeur.setTerrain({
+                    source: "dem-playeur",
+                    exaggeration: 1.5
+                });
+                console.log("🏔️ Terrain 3D restauré");
+            } catch (e) {
+                console.warn("⚠️ Erreur restauration terrain:", e);
+            }
+        }
     }
 
     // 🔄 Réinitialiser l'état global
@@ -1840,7 +2039,6 @@ function clearTraces() {
 
     console.log("✅ Nettoyage terminé");
 }
-
 // CHANGEMENT DE STYLE DE CARTE
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
@@ -2072,6 +2270,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // en fonction du moyen de mobilité sélectionné
     });
 });
+
+// ===============================
+// FONCTIONS MANQUANTES
+// ===============================
+
+function setupMapInteractionListeners() {
+    console.log("🔧 Configuration des écouteurs d'interaction carte...");
+    // Cette fonction peut être vide pour l'instant ou contenir votre logique
+}
+
+function fallbackFitProcessing(arrayBuffer, file, ext) {
+    console.warn("⚠️ Fallback FIT processing non implémenté");
+    showMessage("❌ Traitement FIT non disponible", 'red');
+}
+
+function processFitData(data, file, ext) {
+    console.warn("⚠️ Process FIT data non implémenté");
+    showMessage("❌ Traitement FIT data non disponible", 'red');
+}
 
 // Export pour debug
 window.App = {
